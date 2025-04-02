@@ -1,0 +1,71 @@
+<div class="flex flex-col mt-2">
+  <div class="basis-1">
+    <div class="flex items-center" [ngClass]="{'justify-center': reduce}">
+      <div class="{{reduce ? '' : 'ml-auto'}}">
+        <img src="assets/images/{{reduce ? 'logoReduce' : 'logo'}}.png" alt="logo" class="h-10">
+      </div>
+      <div class="{{reduce ? '' : 'ml-auto'}}">
+        <lucide-icon name="{{reduce ? 'chevrons-right' : 'chevrons-left'}}" class="h-10 text-secondary font-bold cursor-pointer" (click)="reduceSidebar()"></lucide-icon>
+      </div>
+    </div>
+  </div>
+  <div class="basis-1 m-4">
+    <div class="flex flex-col">
+      <div class="px-3">
+        <span class="text-lg text-secondary font-bold {{reduce ? 'hidden' : ''}}">MENU</span>
+      </div>
+      <div class="mb-4">
+        <ul>
+          <li *ngFor="let item of menuItems; let i = index"
+              [routerLink]="item.route"
+              routerLinkActive="bg-liBlue"
+              class="relative group flex flex-col cursor-pointer rounded-lg"
+              (click)="goTo(i)"
+              [ngClass]="{'bg-liBlue': selectedMenu === i}">
+
+            <div class="flex items-center justify-between w-full rounded-lg p-3">
+              <div class="flex items-center space-x-2">
+                <lucide-icon
+                  [name]="item.icon"
+                  class="h-4"
+                  [ngClass]="{'text-primary fill-primary': selectedMenu === i}"></lucide-icon>
+
+                <!-- Texte affiché uniquement si reduce est false -->
+                <span
+                  class="whitespace-nowrap"
+                  [ngClass]="{
+          'hidden': reduce,
+          'text-primary': selectedMenu === i
+        }">{{ item.label }}</span>
+
+                <!-- Tooltip affiché uniquement si reduce === true -->
+                <span
+                  *ngIf="reduce"
+                  class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-white text-black shadow-custom-tooltip rounded-md px-3 py-1 text-sm font-semibold opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300 whitespace-nowrap z-50">
+        {{ item.label }}
+      </span>
+              </div>
+
+              <!-- Icone "plus" uniquement si reduce false -->
+              <lucide-icon
+                *ngIf="item.subMenu"
+                [name]="selectedMenuIndex === i ? 'minus' : 'plus'"
+                class="h-4 cursor-pointer text-primary"
+                [ngClass]="{ 'hidden': reduce }"
+                (click)="toggleSubMenu(i)">
+              </lucide-icon>
+            </div>
+
+            <!-- Sous-menu -->
+            <ul *ngIf="selectedMenuIndex === i && item.subMenu" class="ml-6">
+              <li *ngFor="let sub of item.subMenu" class="flex items-center space-x-2 rounded-lg p-3">
+                <lucide-icon name="chevrons-left" class="h-4"></lucide-icon>
+                <span class="whitespace-nowrap">{{ sub }}</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,30 @@
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { routes } from './app.routes';
+import { LucideAngularModule } from 'lucide-angular';
+import { TranslateLoader, TranslateModule } from "@ngx-translate/core";
+import { HttpClient, provideHttpClient } from "@angular/common/http";
+import { TranslateHttpLoader } from "@ngx-translate/http-loader";
+import {SharedModule} from "./shared/shared.module";
+
+export function HttpLoaderFactory(http: HttpClient) {
+  return new TranslateHttpLoader(http);
+}
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(),
+    importProvidersFrom(
+      LucideAngularModule,
+      SharedModule,
+      TranslateModule.forRoot({
+        loader: {
+          provide: TranslateLoader,
+          useFactory: HttpLoaderFactory,
+          deps: [HttpClient],
+        },
+      })
+    )
+  ]
+};

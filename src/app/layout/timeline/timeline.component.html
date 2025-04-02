@@ -1,0 +1,109 @@
+<div class="lg:w-full md:w-2/4" [ngClass]="{'hidden': timelineHidden}">
+     <div>
+          <div class="flex items-center justify-around">
+
+               <div [ngClass]="{'text-white': currentStep >= 1, 'text-primary': currentStep < 1}"
+                    class="flex items-center relative cursor-pointer">
+                    <div [ngClass]="{'bg-primary': currentStep >= 1, 'bg-white': currentStep < 1}"
+                         class="flex justify-center h-10 w-10 py-2 border-2 border-primary rounded-full transition duration-500 ease-in-out">
+                         1
+                    </div>
+                    <div
+                         class="text-center text-black leading-1 absolute top-0 -ml-10  mt-10 w-32 text-xs font-semibold hidden lg:block">
+                         {{ 'REQUEST' | translate }}
+                    </div>
+               </div>
+
+               <div class="flex-auto border-t-2 border-timelineBlue mx-2 transition duration-500 ease-in-out "></div>
+
+               <div [ngClass]="{'text-white': currentStep >= 2, 'text-primary': currentStep < 2}" (click)="goToStep(2)"
+                    class="flex items-center relative cursor-pointer">
+                 <div
+                      [ngClass]="{'bg-primary': currentStep >= 2,'bg-white': currentStep < 2}"
+                      class="flex justify-center h-10 w-10 py-2 border-2 border-primary rounded-full transition duration-500 ease-in-out">
+                   2
+                 </div>
+                    <div
+                         class=" leading-1 absolute top-0 -ml-10 text-center text-black mt-10 w-32 text-xs font-semibold hidden lg:block">
+                         {{ 'COMPANIONS' | translate }}
+                    </div>
+               </div>
+
+               <div class="flex-auto border-t-2 border-timelineBlue mx-2 transition duration-500 ease-in-out"></div>
+
+            <div [ngClass]="{'text-white': currentStep >= 3, 'text-primary': currentStep < 3}" (click)="goToStep(3)"
+                 class="flex items-center relative cursor-pointer">
+              <div
+                [ngClass]="{'bg-primary': currentStep >= 3,'bg-white': currentStep < 3}"
+                class="flex justify-center h-10 w-10 py-2 border-2 border-primary rounded-full transition duration-500 ease-in-out">
+                3
+              </div>
+              <div
+                class=" leading-1 absolute top-0 -ml-10 text-center text-black mt-10 w-32 text-xs font-semibold hidden lg:block">
+                {{ 'PER_DIEM_REQUEST' | translate }}
+              </div>
+            </div>
+
+               <div class="flex-auto border-t-2 border-timelineBlue mx-2 transition duration-500 ease-in-out"></div>
+
+            <div [ngClass]="{'text-white': currentStep >= 4, 'text-primary': currentStep < 4}" (click)="goToStep(4)"
+                 class="flex items-center relative cursor-pointer">
+              <div
+                [ngClass]="{'bg-primary': currentStep >= 4,'bg-white': currentStep < 4}"
+                class="flex justify-center h-10 w-10 py-2 border-2 border-primary rounded-full transition duration-500 ease-in-out">
+                4
+              </div>
+              <div
+                class=" leading-1 absolute top-0 -ml-10 text-center text-black mt-10 w-32 text-xs font-semibold hidden lg:block">
+                {{ 'VEHICLE_RESERVATION_REQUEST' | translate }}
+              </div>
+            </div>
+
+               <div class="flex-auto border-t-2 border-timelineBlue mx-2 transition duration-500 ease-in-out"></div>
+
+            <div [ngClass]="{'text-white': currentStep >= 5, 'text-primary': currentStep < 5}" (click)="goToStep(5)"
+                 class="flex items-center relative cursor-pointer">
+              <div
+                [ngClass]="{'bg-primary': currentStep >= 5,'bg-white': currentStep < 5}"
+                class="flex justify-center h-10 w-10 py-2 border-2 border-primary rounded-full transition duration-500 ease-in-out">
+                5
+              </div>
+              <div
+                class=" leading-1 absolute top-0 -ml-10 text-center text-black mt-10 w-32 text-xs font-semibold hidden lg:block">
+                {{ 'TICKET_RESERVATION_REQUEST' | translate }}
+              </div>
+            </div>
+
+               <div class="flex-auto border-t-2 border-timelineBlue mx-2 transition duration-500 ease-in-out"></div>
+
+            <div [ngClass]="{'text-white': currentStep >= 6, 'text-primary': currentStep < 6}" (click)="goToStep(6)"
+                 class="flex items-center relative cursor-pointer">
+              <div
+                [ngClass]="{'bg-primary': currentStep >= 6,'bg-white': currentStep < 6}"
+                class="flex justify-center h-10 w-10 py-2 border-2 border-primary rounded-full transition duration-500 ease-in-out">
+                6
+              </div>
+              <div
+                class=" leading-1 absolute top-0 -ml-10 text-center text-black mt-10 w-32 text-xs font-semibold hidden lg:block">
+                {{ 'SHUTTLE_RESERVATION_REQUEST' | translate }}
+              </div>
+            </div>
+
+               <div class="flex-auto border-t-2 border-timelineBlue mx-2 transition duration-500 ease-in-out"></div>
+
+            <div [ngClass]="{'text-white': currentStep >= 7, 'text-primary': currentStep < 7}" (click)="goToStep(7)"
+                 class="flex items-center relative cursor-pointer">
+              <div
+                [ngClass]="{'bg-primary': currentStep >= 7,'bg-white': currentStep < 7}"
+                class="flex justify-center h-10 w-10 py-2 border-2 border-primary rounded-full transition duration-500 ease-in-out">
+                7
+              </div>
+              <div
+                class=" leading-1 absolute top-0 -ml-10 text-center text-black mt-10 w-32 text-xs font-semibold hidden lg:block">
+                {{ 'SUMMARY' | translate }}
+              </div>
+            </div>
+
+          </div>
+     </div>
+</div>

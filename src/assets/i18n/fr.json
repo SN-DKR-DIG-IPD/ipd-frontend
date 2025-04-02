@@ -1,0 +1,9 @@
+{
+  "REQUEST": "Demande",
+  "COMPANIONS": "Accompagnateurs",
+  "PER_DIEM_REQUEST": "Demande de per diem",
+  "VEHICLE_RESERVATION_REQUEST": "Demande de réservation de véhicule",
+  "TICKET_RESERVATION_REQUEST": "Demande de réservation de billet",
+  "SHUTTLE_RESERVATION_REQUEST": "Demande de réservation de navette",
+  "SUMMARY": "Récapitulatif"
+}
