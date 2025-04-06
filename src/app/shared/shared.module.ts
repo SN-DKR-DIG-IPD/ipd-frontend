@@ -1,7 +1,23 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import {
-  Bell, ChevronsLeft, ChevronsRight, CircleUser, Copy, Equal, FolderPlus, LayoutDashboard, LockKeyhole, LogOut,
-  LucideAngularModule, Minus, Plus, Printer, Proportions, Settings, Slash
+  Bell,
+  ChevronsLeft,
+  ChevronsRight,
+  CircleUser,
+  Copy,
+  Equal,
+  FolderPlus, Globe,
+  GlobeLock,
+  LayoutDashboard,
+  LockKeyhole,
+  LogOut,
+  LucideAngularModule,
+  Minus,
+  Plus,
+  Printer,
+  Proportions,
+  Settings,
+  Slash
 } from "lucide-angular";
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -30,7 +46,8 @@ import {TimelineComponent} from "../layout/timeline/timeline.component";
       Equal,
       Settings,
       Bell,
-      Plus, LayoutDashboard, Copy, FolderPlus, Proportions, Printer, Slash, CircleUser, LockKeyhole, LogOut, Minus
+      Plus, LayoutDashboard, Copy, FolderPlus, Proportions, Printer, Slash, CircleUser, LockKeyhole, LogOut, Minus,
+      Globe, GlobeLock
     }),
     NgOptimizedImage,
     TranslateModule
