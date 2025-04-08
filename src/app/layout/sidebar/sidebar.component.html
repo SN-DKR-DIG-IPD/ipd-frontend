@@ -18,7 +18,6 @@
         <ul>
           <li *ngFor="let item of menuItems; let i = index"
               [routerLink]="item.route"
-              routerLinkActive="bg-liBlue"
               class="relative group flex flex-col cursor-pointer rounded-lg"
               (click)="goTo(i)"
               [ngClass]="{'bg-liBlue': selectedMenu === i}">
