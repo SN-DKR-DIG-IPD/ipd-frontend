@@ -20,7 +20,7 @@ export class TabNavigationService {
         label: 'Demande d\'OM',
         icon: 'copy',
         route: '/dashboard',
-        subMenu: ['Sous-menu 1', 'Sous-menu 2']
+        subMenu: ['OM nationale', 'OM internationale']
       },
       {
         index: 3,

@@ -24,6 +24,8 @@ export class SidebarComponent implements OnInit {
   selectedMenu: number = 0;
   reduce= false
   menuItems!: NavigationTabModel[];
+  @Output() reduceChange = new EventEmitter<boolean>();
+
 constructor(private tabNavigationService: TabNavigationService) {
 }
 
@@ -40,10 +42,12 @@ constructor(private tabNavigationService: TabNavigationService) {
   goTo(index: number): void {
     this.selectedMenu = index;
   }
-  @Output() reduceChange = new EventEmitter<boolean>();
 
   reduceSidebar() {
     this.reduce = !this.reduce;
+    if (this.reduce) {
+      this.selectedMenuIndex = -1;
+    }
     this.reduceChange.emit(this.reduce);
   }
 }

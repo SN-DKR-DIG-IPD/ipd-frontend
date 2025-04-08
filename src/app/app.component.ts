@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import {LucideAngularModule} from "lucide-angular";
@@ -10,10 +10,12 @@ import {LucideAngularModule} from "lucide-angular";
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnInit{
   constructor(
     private translate: TranslateService) {
     translate.setDefaultLang('fr');
   }
-  title = 'ipd-front';
+
+  ngOnInit() {
+  }
 }

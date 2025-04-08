@@ -38,11 +38,15 @@
         }">{{ item.label }}</span>
 
                 <!-- Tooltip affiché uniquement si reduce === true -->
-                <span
+                <div
                   *ngIf="reduce"
-                  class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-white text-black shadow-custom-tooltip rounded-md px-3 py-1 text-sm font-semibold opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300 whitespace-nowrap z-50">
-        {{ item.label }}
-      </span>
+                  class="absolute left-8 ml-0.5 top-1/2 -translate-y-1/2 bg-white text-black shadow-custom-tooltip rounded-md px-3 py-2 text-sm font-semibold opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300 z-50 flex flex-col space-y-1 min-w-max">
+                  <span>{{ item.label }}</span>
+                  <ng-container *ngIf="item.subMenu">
+                    <span *ngFor="let sub of item.subMenu" class="text-xs font-normal">{{ sub }}</span>
+                  </ng-container>
+                </div>
+
               </div>
 
               <!-- Icone "plus" uniquement si reduce false -->
@@ -58,7 +62,6 @@
             <!-- Sous-menu -->
             <ul *ngIf="selectedMenuIndex === i && item.subMenu" class="ml-6">
               <li *ngFor="let sub of item.subMenu" class="flex items-center space-x-2 rounded-lg p-3">
-                <lucide-icon name="chevrons-left" class="h-4"></lucide-icon>
                 <span class="whitespace-nowrap">{{ sub }}</span>
               </li>
             </ul>
