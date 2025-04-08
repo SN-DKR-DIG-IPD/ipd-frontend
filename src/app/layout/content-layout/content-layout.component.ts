@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import {LucideAngularModule} from "lucide-angular";
-import {NgClass} from "@angular/common";
+import {NgClass, NgIf} from "@angular/common";
 import {BreadcrumbComponent} from "../breadcrumb/breadcrumb.component";
 import {TimelineComponent} from "../timeline/timeline.component";
 import {NavbarComponent} from "../navbar/navbar.component";
@@ -18,15 +18,20 @@ import {RouterOutlet} from "@angular/router";
     SidebarComponent,
     NavbarComponent,
     RouterOutlet,
+    NgIf,
   ],
   templateUrl: './content-layout.component.html',
   styleUrl: './content-layout.component.scss'
 })
 export class ContentLayoutComponent {
   reduce = false;
+  showmenu = false;
 
   onReduceChange(reduce: boolean) {
-    console.log("recu ", reduce)
     this.reduce = reduce;
+  }
+
+  showMenu() {
+    this.showmenu = !this.showmenu;
   }
 }
