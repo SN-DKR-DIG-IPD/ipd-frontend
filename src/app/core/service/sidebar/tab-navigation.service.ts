@@ -19,21 +19,30 @@ export class TabNavigationService {
         index: 2,
         label: 'Demande d\'OM',
         icon: 'copy',
-        route: '/dashboard',
-        subMenu: ['Sous-menu 1', 'Sous-menu 2']
+        subMenu: [
+          {
+            index: 1,
+            label: 'OM nationale',
+            route:'demand/omnationale'
+          },
+          {
+            index: 2,
+            label: 'OM internationale',
+            route:'demand/ominternationale'
+          },
+        ]
       },
       {
         index: 3,
         label: 'Actions spécifiques',
         icon: 'folder-plus',
-        route: '/dashboard',
-        subMenu: ['Sous-menu A', 'Sous-menu B']
+        route: '',
       },
       {
         index: 4,
         label: 'Reporting',
         icon: 'proportions',
-        route: '/dashboard',
+        route: '',
       }
     ]
     return this.navigationTabs;

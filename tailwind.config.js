@@ -10,8 +10,10 @@ module.exports = {
         black: '#171725',
         lightBlue: '#F1F8FF',
         timelineBlue: '#C7E4FF',
-        liBlue: '#DDEFFF'
-      },
+        liBlue: '#DDEFFF',
+        breadcrumbColor: '#545454'
+
+},
       borderWidth: {
         1: '1px',
       },
@@ -22,10 +24,7 @@ module.exports = {
     },
   },
   plugins: [
-    require("@tailwindcss/typography"),
     require("@tailwindcss/forms"),
-    require("@tailwindcss/aspect-ratio"),
-    require("@tailwindcss/container-queries"),
     require('flowbite/plugin')
   ],
 };
