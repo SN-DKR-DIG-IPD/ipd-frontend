@@ -1,19 +1,26 @@
 <nav class="flex mb-4" aria-label="Breadcrumb">
-  <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
+  <ol class="inline-flex items-center space-x-1 rtl:space-x-reverse">
+    <!-- Élément statique : Tableau de bord -->
     <li class="inline-flex items-center">
-      <a routerLink="dashboard" class="inline-flex items-center text-sm font-medium text-gray-400 hover:text-secondary">
+      <a routerLink="/dashboard" class="inline-flex items-center text-sm font-medium text-breadcrumbColor hover:text-secondary">
         Tableau de bord
       </a>
     </li>
+
+    <!-- Boucle sur les autres breadcrumbs -->
     <li *ngFor="let breadcrumb of breadcrumbs; let isLast = last">
       <div class="flex items-center">
-        <lucide-icon name="chevron-right"></lucide-icon>
+        <lucide-icon name="slash" class="h-3 w-3"></lucide-icon>
+
         <ng-container *ngIf="!isLast || !isLoadingLastBreadcrumb; else loadingSpinner">
-          <a [routerLink]="[breadcrumb.url, breadcrumb.params]"
-             class="cursor-pointer ms-1 text-sm font-medium text-gray-700 hover:text-secondary md:ms-2 dark:text-gray-400 dark:hover:text-white">
+          <a
+            [routerLink]="[breadcrumb.url, breadcrumb.params]"
+            class="ms-1 text-sm font-medium text-breadcrumbColor hover:text-secondary"
+          >
             {{ breadcrumb.label }}
           </a>
         </ng-container>
+
         <ng-template #loadingSpinner>
           <div class="flex items-center">
             <div class="loader border-t-4 border-secondary rounded-full w-4 h-4 animate-spin"></div>

@@ -1,18 +1,19 @@
 import { Component } from '@angular/core';
-import {ActivatedRoute, NavigationEnd, PRIMARY_OUTLET, Router, RouterLink} from "@angular/router";
-import {LucideAngularModule} from "lucide-angular";
-import {filter} from "rxjs";
-import {NgForOf, NgIf} from "@angular/common";
+import {
+  ActivatedRoute,
+  NavigationEnd,
+  PRIMARY_OUTLET,
+  Router,
+  RouterLink
+} from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
+import { filter } from 'rxjs';
+import { NgForOf, NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-breadcrumb',
   standalone: true,
-  imports: [
-    RouterLink,
-    LucideAngularModule,
-    NgForOf,
-    NgIf
-  ],
+  imports: [RouterLink, LucideAngularModule, NgForOf, NgIf],
   templateUrl: './breadcrumb.component.html',
   styleUrl: './breadcrumb.component.scss'
 })
@@ -26,12 +27,14 @@ export class BreadcrumbComponent {
     private readonly activatedRoute: ActivatedRoute,
     private readonly router: Router
   ) {
-    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
-      let root: ActivatedRoute = this.activatedRoute.root;
-      this.getBreadcrumbs(root).then(breadcrumbs => {
-        this.breadcrumbs = breadcrumbs;
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        let root: ActivatedRoute = this.activatedRoute.root;
+        this.getBreadcrumbs(root).then(breadcrumbs => {
+          this.breadcrumbs = breadcrumbs;
+        });
       });
-    });
   }
 
   private async getBreadcrumbs(
@@ -50,22 +53,29 @@ export class BreadcrumbComponent {
         continue;
       }
 
-      if (!child.snapshot.data.hasOwnProperty(this.ROUTE_DATA_BREADCRUMB)) {
+      const breadcrumbLabel = child.snapshot.data[this.ROUTE_DATA_BREADCRUMB];
+
+      // Skip if no label
+      if (!breadcrumbLabel && breadcrumbLabel !== '') {
         return this.getBreadcrumbs(child, url, breadcrumbs);
       }
 
-      let breadcrumbLabel = child.snapshot.data[this.ROUTE_DATA_BREADCRUMB];
-
-      if(breadcrumbLabel === ''){
+      if (breadcrumbLabel === '') {
         this.isLoadingLastBreadcrumb = true;
       }
 
-      // Ajouter le breadcrumb seulement si le label n'est pas déjà présent
-      if (!breadcrumbs.some(bc => bc.label === breadcrumbLabel)) {
+      if (breadcrumbLabel === 'Tableau de bord') {
+        return this.getBreadcrumbs(child, url, breadcrumbs); // skip le premier
+      }
+
+      const breadcrumbUrl = child.snapshot.data[this.ROUTE_DATA_LINK] || this.router.url;
+
+      // Avoid duplicates by label + url
+      if (!breadcrumbs.some(bc => bc.label === breadcrumbLabel && bc.url === breadcrumbUrl)) {
         breadcrumbs.push({
           label: breadcrumbLabel,
           params: child.snapshot.params,
-          url: child.snapshot.data[this.ROUTE_DATA_LINK] || this.router.url,
+          url: breadcrumbUrl,
         });
       }
 
@@ -75,6 +85,7 @@ export class BreadcrumbComponent {
     return breadcrumbs;
   }
 }
+
 interface BreadCrumb {
   label: string;
   params?: { [key: string]: any };
