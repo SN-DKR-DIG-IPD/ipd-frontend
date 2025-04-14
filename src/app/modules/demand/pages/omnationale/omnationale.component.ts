@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 
 @Component({
   selector: 'app-omnationale',
@@ -7,4 +7,8 @@ import { Component } from '@angular/core';
 })
 export class OMNationaleComponent {
 
+  currentStep: number = 1;
+  maxLevel = 1;
+  constructor() {
+  }
 }

@@ -30,12 +30,18 @@ export class BreadcrumbComponent {
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
-        let root: ActivatedRoute = this.activatedRoute.root;
-        this.getBreadcrumbs(root).then(breadcrumbs => {
-          this.breadcrumbs = breadcrumbs;
-        });
+        // Réinitialiser les breadcrumbs si l'URL est la page d'accueil
+        if (this.router.url === '/dashboard') {
+          this.breadcrumbs = [];
+        } else {
+          let root: ActivatedRoute = this.activatedRoute.root;
+          this.getBreadcrumbs(root).then(breadcrumbs => {
+            this.breadcrumbs = breadcrumbs;
+          });
+        }
       });
   }
+
 
   private async getBreadcrumbs(
     route: ActivatedRoute,
