@@ -79,6 +79,9 @@ export class SidebarComponent implements OnInit {
 
   reduceSidebar() {
     this.reduce = !this.reduce;
+    if (this.reduce) {
+      this.selectedMenuIndex = -1;
+    }
     this.reduceChange.emit(this.reduce);
   }
 
