@@ -26,7 +26,7 @@ export class SidebarComponent implements OnInit {
   selectedSubMenu: string = '';
   reduce = false;
   menuItems!: NavigationTabModel[];
-
+  @Output() menuSelected = new EventEmitter<{ menu: NavigationTabModel, subMenu?: string }>();
   @Output() reduceChange = new EventEmitter<boolean>();
 
   constructor(
@@ -37,7 +37,16 @@ export class SidebarComponent implements OnInit {
   ngOnInit() {
     this.initTabMenus();
 
-    // Listen to route changes
+    const storedMenu = sessionStorage.getItem('selectedMenu');
+    const storedSubMenu = sessionStorage.getItem('selectedSubMenu');
+
+    if (storedMenu) {
+      this.selectedMenu = parseInt(storedMenu, 10);
+    }
+    if (storedSubMenu) {
+      this.selectedSubMenu = storedSubMenu;
+    }
+
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
@@ -60,11 +69,9 @@ export class SidebarComponent implements OnInit {
     const item = this.menuItems[index];
 
     if (!item.subMenu || item.subMenu.length === 0) {
-
       this.selectedMenu = index;
       this.selectedSubMenu = '';
     } else {
-
       this.selectedMenu = index;
     }
 
@@ -74,8 +81,10 @@ export class SidebarComponent implements OnInit {
         this.selectedSubMenu = selectedSubMenu.route;
       }
     }
-  }
 
+    sessionStorage.setItem('selectedMenu', this.selectedMenu.toString());
+    sessionStorage.setItem('selectedSubMenu', this.selectedSubMenu);
+  }
 
   reduceSidebar() {
     this.reduce = !this.reduce;
@@ -88,31 +97,41 @@ export class SidebarComponent implements OnInit {
   selectSubMenu(route: string) {
     this.selectedSubMenu = route;
   }
+
   private highlightCurrentRoute(route: string) {
     let found = false;
 
-    this.menuItems.forEach((item, index) => {
+    if (this.selectedSubMenu && route.startsWith(`/${this.selectedSubMenu}`)) {
+      return;
+    }
+
+    for (let [index, item] of this.menuItems.entries()) {
       if (item.subMenu) {
-        const foundSub = item.subMenu.find(sub => route.includes(sub.route));
+        const foundSub = item.subMenu.find(sub => route.startsWith(`/${sub.route}`));
         if (foundSub) {
           this.selectedMenu = index;
           this.selectedMenuIndex = index;
           this.selectedSubMenu = foundSub.route;
           found = true;
+          break;
         }
       }
-    });
+    }
 
+    if (!found && this.selectedSubMenu && route.startsWith(`/${this.selectedSubMenu.split('/')[0]}`)) {
+      return;
+    }
 
     if (!found) {
-      this.menuItems.forEach((item, index) => {
-        if (item.route && route.includes(item.route)) {
+      for (let [index, item] of this.menuItems.entries()) {
+        if (item.route && route.startsWith(item.route)) {
           this.selectedMenu = index;
           this.selectedMenuIndex = null;
           this.selectedSubMenu = '';
           found = true;
+          break;
         }
-      });
+      }
     }
 
     if (!found) {
@@ -121,5 +140,4 @@ export class SidebarComponent implements OnInit {
       this.selectedSubMenu = '';
     }
   }
-
 }

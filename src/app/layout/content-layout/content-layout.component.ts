@@ -1,13 +1,14 @@
-import {Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {LucideAngularModule} from "lucide-angular";
-import {NgClass, NgIf} from "@angular/common";
+import {NgClass, NgIf, NgSwitch, NgSwitchCase} from "@angular/common";
 import {BreadcrumbComponent} from "../breadcrumb/breadcrumb.component";
 import {TimelineComponent} from "../timeline/timeline.component";
 import {NavbarComponent} from "../navbar/navbar.component";
 import {SidebarComponent} from "../sidebar/sidebar.component";
-import {RouterOutlet} from "@angular/router";
+import {Router, RouterOutlet} from "@angular/router";
 import {KeycloakService} from "keycloak-angular";
 import {KeycloakProfile} from "keycloak-js";
+import {DemandModule} from "../../modules/demand/demand.module";
 
 @Component({
   selector: 'app-content-layout',
@@ -21,6 +22,9 @@ import {KeycloakProfile} from "keycloak-js";
     NavbarComponent,
     RouterOutlet,
     NgIf,
+    DemandModule,
+    NgSwitchCase,
+    NgSwitch,
   ],
   templateUrl: './content-layout.component.html',
   styleUrl: './content-layout.component.scss'
@@ -28,24 +32,19 @@ import {KeycloakProfile} from "keycloak-js";
 export class ContentLayoutComponent implements OnInit{
   reduce = false;
   showmenu = false;
+  currentRoute = false;
   userProfile!: KeycloakProfile
   userRole: string = ''
   isTimeline: boolean = false
+  step: number = 0;
 
-  constructor(private keycloakService: KeycloakService) {
+  constructor(private keycloakService: KeycloakService, private cdr: ChangeDetectorRef, private router: Router) {
   }
 
   ngOnInit(): void {
+    this.currentRoute = this.router.url.includes('dashboard');
+
     this.keycloakService.loadUserProfile().then(result => this.userProfile = result)
-    const tokenParsed = this.keycloakService.getKeycloakInstance().tokenParsed;
-
-    const realmRoles = tokenParsed?.realm_access?.roles || [];
-
-    this.userRole = realmRoles.filter(role =>
-      role !== 'offline_access' &&
-      role !== 'uma_authorization' &&
-      !role.startsWith('default-roles-')
-    )[0]
   }
 
   onReduceChange(reduce: boolean) {
@@ -58,8 +57,12 @@ export class ContentLayoutComponent implements OnInit{
   logout(){
     this.keycloakService.logout("")
   }
+
   handleTimelineChange(isTimeline: boolean) {
     this.isTimeline = isTimeline;
-    console.log(isTimeline)
+    this.cdr.detectChanges();
+  }
+  onStepChanged(step: number) {
+    this.step = step;
   }
 }

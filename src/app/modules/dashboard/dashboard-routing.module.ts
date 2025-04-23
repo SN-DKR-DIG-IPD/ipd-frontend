@@ -9,7 +9,7 @@ const routes: Routes = [
 		component: DashboardComponent,
     data: {
       breadcrumb: 'Tableau de bord',
-      link: 'dashboard'
+      title: 'Tableau de bord',
     },
 	}
 ];

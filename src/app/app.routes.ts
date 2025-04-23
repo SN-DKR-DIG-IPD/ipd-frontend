@@ -19,6 +19,7 @@ export const routes: Routes = [
       {
         path: 'demand',
         loadChildren: () => import('./modules/demand/demand.module').then((m) => m.DemandModule),
+        canActivate: [AuthGuard],
       },
       {
         path: '',
