@@ -1,18 +1,19 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import {
-  Bell,
+  BadgeCheck,
+  Bell, CheckCheck, ChevronLeft, ChevronRight,
   ChevronsLeft,
-  ChevronsRight,
-  CircleUser,
+  ChevronsRight, CircleEllipsis,
+  CircleUser, Combine,
   Copy,
-  Equal,
+  Equal, Eye,
   FolderPlus, Globe,
   GlobeLock,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
   LucideAngularModule,
-  Minus,
+  Minus, Pen,
   Plus,
   Printer,
   Proportions,
@@ -43,11 +44,11 @@ import {TimelineComponent} from "../layout/timeline/timeline.component";
     TimelineComponent,
     LucideAngularModule.pick({
       ChevronsLeft, ChevronsRight,
-      Equal,
-      Settings,
-      Bell,
+      Equal, ChevronLeft, ChevronRight,
+      Settings, CheckCheck,
+      Bell, BadgeCheck,
       Plus, LayoutDashboard, Copy, FolderPlus, Proportions, Printer, Slash, CircleUser, LockKeyhole, LogOut, Minus,
-      Globe, GlobeLock
+      Globe, GlobeLock, Combine, CircleEllipsis, Pen, Eye
     }),
     NgOptimizedImage,
     TranslateModule
