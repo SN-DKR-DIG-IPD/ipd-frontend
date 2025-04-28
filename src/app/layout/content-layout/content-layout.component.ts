@@ -8,7 +8,6 @@ import {SidebarComponent} from "../sidebar/sidebar.component";
 import {Router, RouterOutlet} from "@angular/router";
 import {KeycloakService} from "keycloak-angular";
 import {KeycloakProfile} from "keycloak-js";
-import {DemandModule} from "../../modules/demand/demand.module";
 
 @Component({
   selector: 'app-content-layout',
@@ -22,7 +21,6 @@ import {DemandModule} from "../../modules/demand/demand.module";
     NavbarComponent,
     RouterOutlet,
     NgIf,
-    DemandModule,
     NgSwitchCase,
     NgSwitch,
   ],

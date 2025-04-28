@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import {DemandComponent} from "./demand.component";
 import {OMNationaleComponent} from "./pages/omnationale/omnationale.component";
 import {OMInternationaleComponent} from "./pages/ominternationale/ominternationale.component";
 import {CompanionsComponent} from "./pages/companions/companions.component";
@@ -9,6 +8,7 @@ import {VehicleReservationComponent} from "./pages/vehicle-reservation/vehicle-r
 import {SummaryComponent} from "./pages/summary/summary.component";
 import {ShuttleReservationComponent} from "./pages/shuttle-reservation/shuttle-reservation.component";
 import {TicketReservationComponent} from "./pages/ticket-reservation/ticket-reservation.component";
+import {DemandComponent} from "./demand.component";
 
 
 const routes: Routes = [
