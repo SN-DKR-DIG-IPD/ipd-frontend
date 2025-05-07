@@ -1,0 +1,22 @@
+{
+	"name": "@jbpm/domain",
+	"version": "1.0.0",
+	"description": "",
+	"main": "dist/src/index.js",
+	"types": "dist/src/index.d.ts",
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"scripts": {
+		"build": "tsc --build",
+		"lint": "eslint src/**/*.ts"
+	},
+	"dependencies": {
+		"nanoid": "^3.3.4",
+		"axios": "^1.7.7"
+	},
+	"devDependencies": {
+		"vitest": "^0.22.1",
+		"tsconfig": "workspace:*"
+	}
+}

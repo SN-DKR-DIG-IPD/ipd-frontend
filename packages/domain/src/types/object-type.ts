@@ -1,0 +1,1 @@
+export type objectType = Record<string, unknown>;

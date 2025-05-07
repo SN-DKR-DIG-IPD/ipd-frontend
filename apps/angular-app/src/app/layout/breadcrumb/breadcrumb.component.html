@@ -1,0 +1,33 @@
+<nav class="flex mb-4" aria-label="Breadcrumb">
+  <ol class="inline-flex items-center space-x-1 rtl:space-x-reverse">
+    <!-- Élément statique : Tableau de bord -->
+    <li class="inline-flex items-center">
+      <a routerLink="/dashboard" class="inline-flex items-center text-sm font-medium text-breadcrumbColor hover:text-secondary">
+        Tableau de bord
+      </a>
+    </li>
+
+    <!-- Boucle sur les autres breadcrumbs -->
+    <li *ngFor="let breadcrumb of breadcrumbs; let isLast = last">
+      <div class="flex items-center">
+        <lucide-icon name="slash" class="h-3 w-3"></lucide-icon>
+
+        <ng-container *ngIf="!isLast || !isLoadingLastBreadcrumb; else loadingSpinner">
+          <a
+            [routerLink]="[breadcrumb.url, breadcrumb.params]"
+            class="ms-1 text-sm font-medium text-breadcrumbColor hover:text-secondary"
+          >
+            {{ breadcrumb.label }}
+          </a>
+        </ng-container>
+
+        <ng-template #loadingSpinner>
+          <div class="flex items-center">
+            <div class="loader border-t-4 border-secondary rounded-full w-4 h-4 animate-spin"></div>
+            <span class="ml-2 text-sm text-gray-500">Chargement...</span>
+          </div>
+        </ng-template>
+      </div>
+    </li>
+  </ol>
+</nav>

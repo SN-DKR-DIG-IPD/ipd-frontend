@@ -1,0 +1,15 @@
+{
+  "extends": "tsconfig/tsconfig.base.node.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/domain"
+    },
+    {
+      "path": "./packages/adapters"
+    },
+    {
+      "path": "./packages/loader"
+    }
+  ]
+}

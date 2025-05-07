@@ -1,0 +1,50 @@
+/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("./assets/styles/theme/scss/layout-content.scss");
+@import url("./assets/styles/theme/scss/sidebar.scss");
+@import url("./assets/styles/theme/scss/navbar.scss");
+@import url("./assets/styles/theme/scss/card.scss");
+@import url("./assets/styles/theme/scss/button.scss");
+body{
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Lexend', sans-serif;
+}
+
+input:focus{
+  outline: none;
+}
+
+//Scrollbar custom
+::-webkit-scrollbar {
+  width: 2px; /* Largeur de la barre de défilement */
+  height: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Couleur de fond de la barre de défilement */
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888; /* Couleur de la barre de défilement */
+  border-radius: 2px; /* Rayon de bordure de la barre de défilement */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Couleur de la barre de défilement lorsqu'elle est survolée */
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,9 @@
+@import url("./variable/button.variable.scss");
+
+.theme-button-bg-color {
+  background-color: var(--theme-button-bg-color) !important;
+}
+
+.theme-button-text-color {
+  color: var(--theme-button-text-color) !important;
+}

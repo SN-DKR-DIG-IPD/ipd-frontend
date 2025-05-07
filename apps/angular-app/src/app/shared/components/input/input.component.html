@@ -1,0 +1,23 @@
+<div class="mb-1 mt-4 flex flex-col" *ngIf="control">
+  <label [for]="inputId" *ngIf="label" [class.required]="isRequired">{{
+    label
+  }}</label>
+  <input
+    matInput
+    [id]="inputId"
+    [type]="type"
+    [required]="isRequired"
+    [formControl]="control"
+    [placeholder]="placeholder"
+    class="form-control form-control-sm"
+    [class.is-invalid]="
+      !!(control && control.invalid && (control.dirty || control.touched))
+    "
+  />
+
+  <app-validation-errors
+    [control]="control"
+    [customErrorMessages]="customErrorMessages"
+  >
+  </app-validation-errors>
+</div>

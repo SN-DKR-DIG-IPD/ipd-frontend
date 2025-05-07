@@ -1,0 +1,8 @@
+@import url("./variable/card.variable.scss");
+.theme-card-bg-color {
+  background-color: var(--theme-card-bg-color) !important;
+}
+
+.theme-card-text-color {
+  color: var(--theme-card-text-color) !important;
+}

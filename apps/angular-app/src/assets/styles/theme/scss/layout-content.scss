@@ -1,0 +1,9 @@
+@import url("./variable/layout-content.variable.scss");
+
+.theme-layout-content-bg-color {
+  background-color: var(--theme-layout-content-bg-color) !important;
+}
+
+.theme-layout-content-text-color {
+  color: var(--theme-layout-content-text-color) !important;
+}

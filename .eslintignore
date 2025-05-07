@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+**/public
+**/coverage
+**/.nyc_output
+**/package.json
+**/package-lock.json
+dist
+vite.config.js
+vite.config.ts
+playwright.config.ts
+packages/web-components/dist
+packages/web-components/www
+packages/web-components/loader
+karma.conf.js

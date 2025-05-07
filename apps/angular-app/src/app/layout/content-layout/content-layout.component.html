@@ -1,0 +1,78 @@
+<div class="h-screen w-screen flex flex-row">
+
+  <div class="{{showmenu ? 'basis-60': 'basis-20'}} bg-primary">
+    <div class="flex flex-col h-full p-3 relative {{showmenu ? 'p-2' : 'items-center'}} text-white">
+
+      <!-- Item 1: Menu -->
+      <div class="flex items-center gap-2 mb-12 group relative cursor-pointer">
+        <lucide-icon name="equal" class="h-6 w-6" (click)="showMenu()"></lucide-icon>
+        <span *ngIf="showmenu">Menu</span>
+        <span
+          *ngIf="!showmenu"
+          class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-white text-black shadow-custom-tooltip rounded-md px-3 py-1 text-sm font-semibold opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300 whitespace-nowrap z-50">
+        Menu
+      </span>
+      </div>
+
+      <!-- Item 2: Configurations -->
+      <div class="flex items-center gap-2 mb-12 group relative cursor-pointer">
+        <lucide-icon name="settings" class="h-6 w-6"></lucide-icon>
+        <span *ngIf="showmenu">Configurations</span>
+        <span
+          *ngIf="!showmenu"
+          class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-white text-black shadow-custom-tooltip rounded-md px-3 py-1 text-sm font-semibold opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300 whitespace-nowrap z-50">
+        Configurations
+      </span>
+      </div>
+
+      <!-- Item 3: Notifications -->
+      <div class="flex items-center gap-2 mb-12 group relative cursor-pointer">
+        <lucide-icon name="bell" class="h-6 w-6"></lucide-icon>
+        <span *ngIf="showmenu">Notifications</span>
+        <span
+          *ngIf="!showmenu"
+          class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-white text-black shadow-custom-tooltip rounded-md px-3 py-1 text-sm font-semibold opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300 whitespace-nowrap z-50">
+        Notifications
+      </span>
+      </div>
+
+      <!-- Profil (en bas) -->
+      <div class="mt-auto mb-4 relative group">
+        <div class="flex items-center gap-3">
+          <img src="assets/images/avatar.png" class="rounded-full h-10 w-10 cursor-pointer" alt="profile" />
+          <div class="flex flex-col" *ngIf="showmenu">
+            <span>{{userProfile}} {{userProfile}}</span>
+            <span class="text-sm font-light">{{userRole}}</span>
+          </div>
+        </div>
+
+        <!-- Tooltip Profil -->
+        <div class="absolute p-2 bottom-0 font-bold left-0 text-black bg-white shadow-custom-tooltip rounded-lg opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300">
+          <ul>
+            <li class="flex items-center gap-2 px-4 py-2 cursor-pointer whitespace-nowrap">
+              <lucide-icon name="circle-user"></lucide-icon> Profil
+            </li>
+            <li class="flex items-center gap-2 px-4 py-2 cursor-pointer whitespace-nowrap">
+              <lucide-icon name="lock-keyhole"></lucide-icon> Modifier le mot de passe
+            </li>
+            <li class="flex items-center gap-2 px-4 py-2 cursor-pointer whitespace-nowrap" (click)="logout()">
+              <lucide-icon name="log-out"></lucide-icon> Se déconnecter
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="{{reduce ? 'basis-20' : 'basis-60'}} shadow-custom-inset">
+    <app-sidebar (reduceChange)="onReduceChange($event)"></app-sidebar>
+  </div>
+  <div class="flex-grow flex flex-col mt-2">
+    <app-navbar></app-navbar>
+    <div class="flex-grow flex flex-col m-4 rounded-xl overflow-scroll overflow-x-hidden">
+      <div>
+        <router-outlet></router-outlet>
+      </div>
+    </div>
+  </div>
+</div>

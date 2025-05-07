@@ -1,0 +1,36 @@
+<div class="relative z-10 pt-4 flex items-center justify-center p-6 animation-slide-in">
+
+  <div
+    class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8 space-y-8 transform transition-all duration-500 hover:shadow-2xl"
+    [ngStyle]="{ opacity: 0, animation: 'slideIn 0.5s ease-out forwards' }"
+  >
+  <button class="p-4 flex pr-20 hover:bg-gray-100 rounded-full transition-colors">
+    <span class="material-icons" (click)="onclose()">close</span>
+  </button>    <!-- Barre de progression -->
+    <!-- En-tête -->
+    <div class="text-center transform transition-all duration-500 hover:scale-105">
+      <p class="text-2xl font-bold text-gray-900" i18n>Request Type : <span class="text-blue-600">{{processName}}</span></p>
+      <p class="mt-2 text-gray-600">{{processVersion}}</p>
+    </div>
+     <!-- Boutons de navigation -->
+      <div class="flex justify-between space-x-4">
+        <button
+          type="button"
+          (click)="startProcess()"
+          class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Start
+        </button>
+
+        <button
+          type="button"
+          (click)="exitProcess()"
+          class="ml-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Exit
+        </button>
+      </div>
+  </div>
+</div>
+
+

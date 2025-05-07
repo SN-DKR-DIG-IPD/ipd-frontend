@@ -1,0 +1,67 @@
+{
+	"name": "@SN-DKR-DIG-TMP/jbpmPortal",
+	"version": "1.0.0",
+	"description": "",
+	"packageManager": "pnpm@9.14.4",
+	"engineStrict": true,
+	"engines": {
+		"pnpm": "9.12.1",
+		"node": ">=16"
+	},
+	"scripts": {
+		"build": "run-p build:wc build:tsc build:jbpm-frontend",
+		"build:prod": "run-p build:wc build:tsc build:prod:jbpm-frontend",
+		"build:watch": "run-p build:tsc:watch",
+		"build:wc": "pnpm --filter web-components run build",
+		"build:tsc": "tsc --noEmit && tsc --build",
+		"build:tsc:watch": "tsc --build --watch",
+		"build:jbpm-frontend": "pnpm --filter jbpm-frontend run build",
+		"build:prod:jbpm-frontend": "pnpm --filter jbpm-frontend run build:prod",
+		"prebuild": "tsc --build --clean",
+		"test": "vitest",
+		"test:coverage": "vitest --coverage",
+		"test:withInfo": "vitest --inspect-brk --no-file-parallelism --disable-console-intercept",
+		"test:ui": "vitest --ui",
+		"test:e2e": "pnpm --filter e2e run test",
+		"test:jbpm-frontend": "pnpm --filter jbpm-frontend run test",
+		"lint": "eslint \"{apps,packages}/**/*.{js,ts}\"",
+		"lint:fix": "npm run lint -- --fix",
+		"angularjsapp": "pnpm --filter ./apps/angularjs-app run dev",
+		"start:jbpm-frontend": "pnpm --filter jbpm-frontend run start",
+		"reactapp": "pnpm --filter ./apps/react-app run dev",
+		"vueapp": "pnpm --filter ./apps/vue-app run dev",
+		"vueapp:build": "pnpm --filter ./apps/vue-app run build",
+		"backend": "pnpm --filter ./apps/backend-api run dev",
+		"rundemo": "run-p backend vueapp build:tsc:watch",
+		"slides:html": "pnpm --filter @hexademo/slides build:html",
+		"slidesfunc:html": "pnpm --filter @hexademo/slides-functional build:html",
+		"slides:pdf": "pnpm --filter @hexademo/slides build:pdf",
+		"ci:pages": "mkdir public && cp -R docs/slides/index.html docs/slides/assets public/ && cp -R docs/slides-functional/index.html public/functional.html"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "BSD-3-Clause",
+
+	"devDependencies": {
+		"@tsconfig/node16": "^1.0.3",
+		"@typescript-eslint/eslint-plugin": "^5.38.0",
+		"@typescript-eslint/parser": "^5.38.0",
+		"@vitest/coverage-v8": "^2.1.2",
+		"eslint-config-jbpm": "workspace:1.0.0",
+		"tsconfig": "workspace:1.0.0",
+		"typescript": "^4.8.3",
+		"vitest": "^2.1.2"
+	},
+
+	"dependencies": {
+		"npm-run-all": "^4.1.5"
+	},
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/SN-DKR-DIG-TMP/jbpmPortal.git"
+  },
+  "publishConfig": {
+  "registry": "https://npm.pkg.github.com/"
+}
+
+}

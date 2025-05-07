@@ -1,0 +1,22 @@
+
+<div *ngIf="!closeModal">
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center overflow-auto">
+      <div class="fixed bottom-6 right-6 flex flex-col gap-2 bg-white rounded-lg shadow-lg p-2 z-50">
+        <button (click)="handleZoomIn()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" [disabled]="scale >= 2">
+          <span class="material-icons">zoom_in</span>
+        </button>
+        <button (click)="handleZoomOut()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" [disabled]="scale <= 0.5">
+          <span class="material-icons">zoom_out</span>
+        </button>
+        <button (click)="handleReset()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          {{ (scale * 100) | number : '1.0-0' }}%
+        </button>
+        <button (click)="toggleMaximize()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <span class="material-icons">{{ isMaximized ? 'close_fullscreen' : 'open_in_full' }}</span>
+        </button>
+      </div>
+      <!-- Modal Content -->
+       <ng-content></ng-content>
+    </div>
+</div>
+   

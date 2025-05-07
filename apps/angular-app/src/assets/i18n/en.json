@@ -1,0 +1,10 @@
+{
+  "REQUEST": "Request",
+  "COMPANIONS": "Companions",
+  "PER_DIEM_REQUEST": "Per diem request",
+  "VEHICLE_RESERVATION_REQUEST": "Vehicle reservation request",
+  "TICKET_RESERVATION_REQUEST": "Ticket reservation request",
+  "SHUTTLE_RESERVATION_REQUEST": "Shuttle reservation request",
+  "SUMMARY": "Summary"
+}
+

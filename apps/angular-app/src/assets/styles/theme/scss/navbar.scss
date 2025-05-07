@@ -1,0 +1,25 @@
+@import url("./variable//navbar.variable.scss");
+
+.theme-navbar-bg-color {
+  background-color: var(--navbar-bg-color) !important;
+}
+
+.theme-navbar-usermenu-bg-color {
+  background-color: var(--navbar-usermenu-bg-color) !important;
+}
+
+.theme-navbar-usermenu-item-bg-hover {
+  &:hover {
+    background-color: var(--navbar-usermenu-item-bg-hover) !important;
+  }
+}
+
+.theme-navbar-usermenu-item-text-color {
+  color: var(--navbar-usermenu-item-text-color) !important;
+}
+
+.theme-navbar-usermenu-item-text-hover {
+  &:hover {
+    color: var(--navbar-usermenu-item-text-hover) !important;
+  }
+}

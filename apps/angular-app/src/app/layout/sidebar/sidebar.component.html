@@ -1,0 +1,93 @@
+<div class="flex flex-col mt-2">
+  <div class="basis-1">
+    <div class="flex items-center" [ngClass]="{'justify-center': reduce}">
+      <div class="{{reduce ? '' : 'ml-auto'}}">
+        <img src="assets/images/{{reduce ? 'logoReduce' : 'logo'}}.png" alt="logo" class="h-10">
+      </div>
+      <div class="{{reduce ? '' : 'ml-auto'}}">
+        <lucide-icon name="{{reduce ? 'chevrons-right' : 'chevrons-left'}}"
+                     class="h-10 text-secondary font-bold cursor-pointer"
+                     (click)="reduceSidebar()">
+        </lucide-icon>
+      </div>
+    </div>
+  </div>
+
+  <div class="basis-1 m-4">
+    <div class="flex flex-col">
+      <div class="px-3">
+        <span class="text-lg text-secondary font-bold" [ngClass]="{'hidden': reduce}">MENU</span>
+      </div>
+      <div class="mb-4">
+        <ul>
+          <li *ngFor="let item of menuItems; let i = index"
+              class="relative group flex flex-col cursor-pointer rounded-lg"
+              [routerLink]="item.route"
+              [ngClass]="{
+      'bg-liBlue': selectedMenu === i && !selectedSubMenu && item.subMenu === undefined
+    }"
+              (click)="goTo(i)">
+
+            <div class="flex items-center justify-between w-full rounded-lg p-3">
+              <div class="flex items-center space-x-2">
+                <lucide-icon
+                  [name]="item.icon"
+                  class="h-4"
+                  [ngClass]="{'text-primary fill-primary': selectedMenu === i && item.subMenu === undefined}"></lucide-icon>
+
+                <!-- Texte du menu -->
+                <span class="whitespace-nowrap"
+                      [ngClass]="{
+                        'hidden': reduce,
+                        'text-primary': selectedMenu === i && item.subMenu === undefined
+                      }">{{ item.label }}</span>
+
+                <a class="relative group">
+                  <div *ngIf="reduce"
+                       class="absolute ml-0.5 top-1/2 -translate-y-1/2 bg-white text-black shadow-custom-tooltip rounded-md px-3 py-2 text-sm font-semibold opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300 z-50 flex flex-col space-y-1 min-w-max"
+                       style="pointer-events: auto;">
+    <span class="font-bold" [routerLink]="item.route" [ngClass]="{
+          'text-primary': selectedMenu === i && item.subMenu === undefined
+        }">{{ item.label }}</span>
+                    <ng-container *ngIf="item.subMenu">
+      <span class="font-light" [routerLink]="sub.route" *ngFor="let sub of item.subMenu"
+            [ngClass]="{
+              'text-xs text-primary': selectedSubMenu === sub.route
+            }">
+        {{ sub.label }}
+      </span>
+                    </ng-container>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Icone plus/minus -->
+              <ng-container *ngIf="item.subMenu as subMenu">
+                <lucide-icon
+                  *ngIf="subMenu.length > 0 && !reduce"
+                  [name]="selectedMenuIndex === i ? 'minus' : 'plus'"
+                  class="h-4 cursor-pointer text-primary"
+                  [ngClass]="{ 'hidden': reduce }"
+                  (click)="toggleSubMenu(i)">
+                </lucide-icon>
+              </ng-container>
+            </div>
+
+            <!-- Sous-menu -->
+            <ul *ngIf="selectedMenuIndex === i && item.subMenu && !reduce" class="ml-6">
+              <li *ngFor="let sub of item.subMenu"
+                  class="flex items-center space-x-2 rounded-lg p-3"
+                  [routerLink]="sub.route"
+                  (click)="selectSubMenu(sub.route)"
+                  [ngClass]="{
+        'bg-liBlue': selectedSubMenu === sub.route
+      }">
+                <span class="whitespace-nowrap {{selectedSubMenu === sub.route ? 'text-primary' : ''}}">{{ sub.label }}</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

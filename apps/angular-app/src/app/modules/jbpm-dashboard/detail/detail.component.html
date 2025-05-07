@@ -1,0 +1,160 @@
+<app-modal #modal
+[closeModal]="closeModal"
+[scale]="scale"
+(modalShowChange)="setCloseModal($event)"
+(onScaleChanged)="setScale($event)"
+(onMaximizedChanged)="setMaximized($event)"
+>
+  <!-- Modal Content -->
+  <div class="bg-white rounded-lg"
+       [ngClass]="{'fixed inset-4': isMaximized, 'w-full max-w-2xl': !isMaximized}"
+       [style.transform]="'scale(' + scale + ')'"
+       style="transform-origin: center; transition: transform 0.2s ease-in-out;">
+    <div class="p-6">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <div class=" text-gray-500 mb-1" i18n>TYPE:
+            <span class="font-[#00005C]">{{ currentUserTaskInfos[requestDetail['task-id']]['processInfo']?.processName}}</span>
+          </div>
+
+          <h6 class="text-[14px]  text-[#0073E6]" i18n>Purchase order for office supplies</h6>
+        </div>
+        <button class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <span class="material-icons" (click)="modal.hideModal(); closeModal=true" i18n>close</span>
+        </button>
+      </div>
+
+      <!-- Info Grid -->
+      <div class="grid grid-cols-3 gap-6 mb-6 bg-gray-50 p-2">
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1" i18n>STATUS</label>
+          <div class="flex items-center">
+            <span class="inline-flex items-center px-3 py-1 text-sm text-[#B95000] border rounded-md border-[#B95000]">
+              {{requestDetail['task-status']}}
+            </span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1" i18n>Start Date
+          </label>
+          <div class="flex items-center">
+            <span class="material-icons text-[#0073E6]">calendar_month</span>
+            <span class="inline-flex items-center px-3 py-1 text-sm border rounded-md bg-gray-50 text-[#08081B]">
+                <ng-container *ngIf="requestDetail['task-created-on']">
+                    {{ requestDetail['task-created-on']['java.util.Date'] | date: 'dd/MM/yyyy' }}
+                </ng-container>
+            </span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-500 mb-1" i18n>End Date
+          </label>
+          <div class="flex items-center">
+            <span class="material-icons text-[#0073E6]">calendar_month</span>
+            <span class="inline-flex items-center px-3 py-1 text-sm border rounded-md bg-gray-50 text-[#08081B]">
+                <ng-container *ngIf="requestDetail['task-created-on']">
+                    {{ requestDetail['task-created-on']['java.util.Date'] | date: 'dd/MM/yyyy' }}
+                </ng-container>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-row-3 gap-6 mb-6 bg-gray-50 p-2">
+        <div>
+          <div class="flex items-center">
+            <label class="block text-sm font-medium text-gray-500 mb-1 pr-10 uppercase" i18n>Responsible</label>
+            <span class="inline-block px-3 py-1 text-sm font-medium text-blue-600 rounded-md">
+              {{currentUserTaskInfos[requestDetail['task-id']]['processInstanceDetail']?.initiator}}
+            </span>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center">
+            <label class="block text-sm font-medium text-gray-500 mb-1 pr-20 uppercase" i18n>Priority
+            </label>
+
+            <span class="inline-block px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-md">
+              {{priority}}
+            </span>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center">
+            <label class="block text-sm font-medium text-gray-500 mb-1 pr-10 uppercase" i18n>approver</label>
+
+            <span class="inline-block px-3 py-1 text-sm font-medium text-blue-600  rounded-md ">
+                {{requestDetail['task-actual-owner'] }} <span *ngIf="currentUserTaskInfos[requestDetail['task-id']]['processInfo']?.workItemParams">{{+ ' - ' + currentUserTaskInfos[requestDetail['task-id']]['workItemInfo']['work-item-params']!.GroupId}}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Progress Section -->
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-500 mb-2">
+          COMPLETION RATE
+        </label>
+
+        <div class="bg-blue-100 rounded-full h-2 mb-4">
+          <div class="bg-blue-500 h-2 rounded-full w-3/5"></div>
+        </div>
+        <!-- Autres étapes de progression -->
+      </div>
+      <div class="bg-gray-50 rounded-lg">
+        <button (click)="toggleSection('details')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors rounded-lg">
+          <span class="material-icons text-blue-500">account_tree</span>
+          <span class="font-medium" i18n>Process details</span>
+          <span class="material-icons">{{ isDetailsExpanded ? 'expand_more' : 'chevron_right' }}</span>
+        </button>
+        <div *ngIf="isDetailsExpanded" class="px-4 pb-4">
+
+          <div [innerHTML]="currentUserTaskInfos[requestDetail['task-id']]['processInstanceDiagram']|safeHtml">
+          </div>
+        </div>
+      </div>
+
+      <!-- Collapsible Sections -->
+      <div class="space-y-4">
+        <!-- History Section -->
+        <div class="bg-gray-50 rounded-lg">
+          <button (click)="toggleSection('history')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors rounded-lg">
+            <span class="material-icons text-blue-500" i18n>history</span>
+            <span class="font-medium">Historical</span>
+            <span class="material-icons">{{ isHistoryExpanded ? 'expand_more' : 'chevron_right' }}</span>
+          </button>
+          <div *ngIf="isHistoryExpanded" class="px-4 pb-4 space-y-4 flex justify-between  text-[12px]">
+            <!-- Historique ici -->
+            <div>
+              <div class=" font-medium text-blue-600 pt-4" i18n>Request created</div>
+              <div class="text-xs text-gray-500">created by {{currentUserTaskInfos[requestDetail['task-id']]['processInstanceDetail']?.initiator}}</div>
+            </div>
+            <div>
+              <div class=" font-medium text-blue-600" i18n>Request submitted </div>
+              <div class="text-xs text-gray-500" i18n>submitted by
+                <span class="font-semibold">{{currentUserTaskInfos[requestDetail['task-id']]['processInstanceDetail']?.initiator}}</span></div>
+            </div>
+            <div>
+              <div class=" font-medium text-blue-600" i18n>Request reviewed & verified</div>
+              <div class="text-xs text-gray-500" i18n>Request reviewed & verified by
+                <span class="font-semibold"> {{currentUserTaskInfos[requestDetail['task-id']]['processInstanceDetail']?.initiator}}</span></div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex justify-end gap-3 mt-6">
+        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" (click)="completeTask()" i18n> Complete Task
+        </button>
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+
+

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+<!-- Patternfly -->
+<link href="http://localhost:8080/kie-server/services/rest/server/files/patternfly/css/patternfly.min.css" rel="stylesheet">
+<link href="http://localhost:8080/kie-server/services/rest/server/files/patternfly/css/patternfly-additions.min.css" rel="stylesheet">
+<link href="http://localhost:8080/kie-server/services/rest/server/files/bootstrap/css/bootstrap-slider.css" rel="stylesheet">
+<link href="http://localhost:8080/kie-server/services/rest/server/files/bootstrap/css/bootstrap-tagsinput.css" rel="stylesheet">
+<link href="http://localhost:8080/kie-server/services/rest/server/files/bootstrap/css/forms.css" rel="stylesheet">
+</head>
+<body>
+
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">PerformanceEvaluation-taskform.frm</h3>
+		</div>
+		<div class="panel-body">
+			<div id="successAlert" class="alert alert-success hidden" role="alert"></div>
+			<div id="failureAlert" class="alert alert-danger hidden" role="alert"></div>
+			<div class="container-fluid">
+		<div class="row">
+		<div class="col-md-12">  <div class="form-group">
+	<label for="field_332058348325587E12">Reason</label>
+	<textarea name="reason" class="form-control" id="field_332058348325587E12" rows="5" placeholder="Reason" readonly >Evaluation HR</textarea>
+</div>
+</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12"><div class="form-group">
+	<label for="field_336003622256354E12">Performance</label> 
+	<strong style="color: red">*</strong>
+	<input name="performance" type="text" class="form-control" id="field_336003622256354E12" placeholder="Performance" value="" pattern="^\d+$"  required>
+</div>
+</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<hr/>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<button id="claimButton" type="button" class="btn btn-default" onclick="claimTask();">Claim</button>
+			<button id="releaseButton" type="button" class="btn btn-default" onclick="releaseTask();">Release</button>
+			<button id="startButton" type="button" class="btn btn-default" onclick="startTask();">Start</button>
+			<button id="stopButton" type="button" class="btn btn-default" onclick="stopTask();">Stop</button>
+			<button id="saveButton" type="button" class="btn btn-default" onclick="saveTask();">Save</button>
+			<button id="completeButton" type="button" class="btn btn-primary" onclick="completeTask();">Complete</button>
+		</div>
+	</div>
+</div>
+		</div>
+	</div>
+
+	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+	<script src="http://localhost:8080/kie-server/services/rest/server/files/patternfly/js/jquery.min.js"></script>
+	<script src="http://localhost:8080/kie-server/services/rest/server/files/patternfly/js/patternfly.min.js"></script>
+	<script src="http://localhost:8080/kie-server/services/rest/server/files/bootstrap/js/bootstrap-slider.js"></script>
+	<script src="http://localhost:8080/kie-server/services/rest/server/files/bootstrap/js/bootstrap-tagsinput.js"></script>
+	<script src="http://localhost:8080/kie-server/services/rest/server/files/js/forms.js"></script>
+	<script src="http://localhost:8080/kie-server/services/rest/server/files/js/kieserver-ui.js"></script>
+	<script>
+		function getData() { 
+return {'reason' : String(document.getElementById('field_332058348325587E12').value),'performance' : String(document.getElementById('field_336003622256354E12').value)}
+ };
+function getTaskEndpoint() { 
+return 'http://localhost:8080/kie-server/services/rest/server/containers/evaluation_1.0.0-SNAPSHOT/tasks/394';
+ };
+function initializeForm() { 
+taskStatus = 'Reserved';
+$('input[data-slider-id]').slider({});
+$('input[data-role=tagsinput').tagsinput();
+initTaskButtons();
+
+ };
+function endpointSuffix() { 
+return '';
+ };
+
+	</script>
+</body>
+</html>

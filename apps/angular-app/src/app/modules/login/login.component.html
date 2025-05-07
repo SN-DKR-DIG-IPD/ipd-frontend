@@ -1,0 +1,192 @@
+<div id="kc-form">
+  <div id="kc-form-wrapper">
+    <div class="flex flex-row h-screen"
+         style="background-image: url('assets/images/login/background.png');
+                                 background-position: 2% 100%; background-repeat: no-repeat">
+      <!-- Colonne des images -->
+      <div class="basis-1/2 h-full flex flex-col gap-3 ml-12">
+        <div class="relative overflow-hidden px-16">
+          <!-- Image de fond -->
+          <img src="assets/images/login/img1.png" alt="login" class="w-full h-full"/>
+          <!-- Image calebasse positionnée en bas à droite -->
+          <img src="assets/images/login/calebasse.png" alt="calebasse"
+               class="absolute bottom-10 -left-60 object-contain w-full h-full"/>
+          <!-- Image lock-keyhole centrée au-dessus -->
+          <img src="assets/images/login/lock-keyhole.png" alt="lock"
+               class="absolute inset-0 m-auto object-contain w-1/3 h-1/3"/>
+        </div>
+
+        <div class="relative overflow-hidden px-16">
+          <!-- Image de fond -->
+          <img src="assets/images/login/img2.png" alt="background" class="w-full h-full"/>
+
+          <!-- Bloc centré avec logo et texte -->
+          <div class="absolute top-1/2 left-[68%] transform -translate-x-1/2 -translate-y-1/2">
+            <img src="assets/images/login/logo-blanc.png" alt="logo" class="object-contain w-[80px] mb-2"/>
+            <!-- Conteneur vertical -->
+            <div class="flex flex-col gap-1">
+              <span class="text-white text-xs leading-snug">Simplifier</span>
+              <span class="text-white text-xs leading-snug">vos déplacements</span>
+              <span class="text-white text-xs leading-snug">avec votre outil</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative overflow-hidden px-16">
+          <!-- Image de fond -->
+          <img src="assets/images/login/img3.png" alt="login" class="w-full h-full"/>
+          <img src="assets/images/login/timer.png" alt="timer"
+               class="absolute -top-1/3 right-0 rotate-5 object-contain w-40 h-60"/>
+          <!-- Image lock-keyhole centrée au-dessus -->
+          <img src="assets/images/login/users.png" alt="lock"
+               class="absolute inset-0 m-auto object-contain w-1/3 h-1/3"/>
+        </div>
+      </div>
+
+
+      <!-- Colonne du formulaire -->
+      <div class="flex flex-col basis-1/2">
+        <div class="my-auto ml-20 mr-32 gap-y-2">
+
+          <div class="mb-2 flex flex-col items-start space-y-2">
+            <!-- Logo -->
+            <img src="assets/images/login/logo.png" alt="logo"
+                 class="object-contain" />
+
+            <!-- Texte d'accueil -->
+            <div>
+              <h1 class="text-2xl font-bold text-black">Bienvenue</h1>
+              <p class="text-grey">Merci de bien vouloir vous connecter ici</p>
+            </div>
+          </div>
+
+          <div class="w-full flex">
+            <form id="kc-form-login" class="w-full" (ngSubmit)="onSubmit()" #form="ngForm">
+              <div class="grid grid-cols-1 gap-y-2" [formGroup]="userCredentials!">
+
+                <div class="relative">
+                  <input formControlName="username"
+                         id="username"
+                         type="text"
+                         [(ngModel)]="login.username"
+                         placeholder=" "
+                         class="peer w-full px-3 pt-6 pb-2 border-1 focus:outline-0 rounded-lg placeholder-transparent"
+                         [ngClass]="{
+         'border-primary': usernameCtrl?.valid && (usernameCtrl?.dirty || usernameCtrl?.touched),
+         'border-error': (usernameCtrl?.invalid && (usernameCtrl?.dirty || usernameCtrl?.touched)) || (formSubmitted && usernameCtrl?.invalid)
+       }"
+                  />
+
+
+                  <label for="username"
+                         class="absolute left-3 top-2 text-sm transition-all
+              peer-placeholder-shown:top-4
+              peer-focus:top-2 peer-focus:text-sm"
+                         [ngClass]="{
+      'text-primary': usernameCtrl?.valid && (usernameCtrl?.dirty || usernameCtrl?.touched),
+      'text-error': (usernameCtrl?.invalid && (usernameCtrl?.dirty || usernameCtrl?.touched)) || (formSubmitted && usernameCtrl?.invalid)
+    }">
+                    Identifiant
+                  </label>
+
+
+                </div>
+
+
+                <div class="relative">
+                  <input
+                    formControlName="password"
+                    [(ngModel)]="login.password"
+                    tabindex="2"
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder=" "
+                    class="peer w-full px-3 pt-6 pb-2 border-1 focus:outline-0 rounded-lg placeholder-transparent"
+                    [ngClass]="{
+      'border-primary': passwordCtrl?.valid && (passwordCtrl?.dirty || passwordCtrl?.touched),
+      'border-error': (passwordCtrl?.invalid && (passwordCtrl?.dirty || passwordCtrl?.touched)) || (formSubmitted && passwordCtrl?.invalid)
+    }"
+                  />
+
+                  <label
+                    for="password"
+                    class="absolute left-3 top-2 text-sm transition-all
+           peer-placeholder-shown:top-4
+           peer-focus:top-2 peer-focus:text-sm"
+                    [ngClass]="{
+      'text-primary': passwordCtrl?.valid && (passwordCtrl?.dirty || passwordCtrl?.touched),
+      'text-error': (passwordCtrl?.invalid && (passwordCtrl?.dirty || passwordCtrl?.touched)) || (formSubmitted && passwordCtrl?.invalid)
+    }"
+                  >
+                    Mot de passe
+                  </label>
+
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-visible">
+                    <img src="assets/images/login/eye-off.png" id="togglePassword" alt="check password" style="cursor: pointer; display: none"/>
+                    <img src="assets/images/login/eye.png" id="unbucklePassword" alt="lock password" style="cursor: pointer; display: none"/>
+                  </div>
+
+                </div>
+
+
+                <div>
+
+                <span *ngIf="isLoading" id="input-error"
+                      class=" text-sm text-error"
+                      aria-live="polite">
+                                                        {{ loadingText }}
+                                                    </span>
+
+          </div>
+
+          <div class="flex flex-row justify-between items-center">
+            <div class="">
+              <div id="kc-form-options">
+
+                <div class="checkbox">
+                  <label class="flex items-center text-black">
+                    <input
+                      tabindex="3"
+                      id="rememberMe"
+                      name="rememberMe"
+                      type="checkbox"
+                      class="peer accent-primary"
+                  >
+                  <span class="ml-2 peer-checked:text-primary transition-colors duration-200">
+                                                                        Se souvenir de moi
+                                                                    </span>
+                  </label>
+                </div>
+
+            </div>
+          </div>
+
+          <div class=" text-primary">
+
+            <span><a tabindex="5" href="">Mot de passe oublié?</a></span>
+
+        </div>
+      </div>
+
+      <div class="text-lg mt-6">
+        <input type="hidden" id="id-hidden-input" name="credentialId"
+         />
+      <input tabindex="4"
+             class="
+           focus:outline-0 py-3 px-5 text-white rounded-lg font-semi-bold w-full cursor-pointer bg-primary"
+             name="login"
+             id="kc-login"
+             type="submit"
+             value="Se connecter"/>
+    </div>
+  </div>
+  </form>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+

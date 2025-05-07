@@ -1,0 +1,32 @@
+@import url("./variable/sidebar.variable.scss");
+
+.theme-sidebar-bg-color {
+  background-color: var(--sidebar-bg-color) !important;
+}
+
+.theme-sidebar-nav-link-bg-color {
+  background-color: var(--sidebar-nav-link-bg-color) !important;
+}
+.theme-sidebar-nav-link-bg-active {
+  background-color: var(--sidebar-nav-link-bg-active) !important;
+}
+
+.theme-sidebar-nav-link-bg-hover {
+  &:hover {
+    background-color: var(--sidebar-nav-link-bg-hover) !important;
+  }
+}
+
+.theme-sidebar-nav-link-text-color {
+  color: var(--sidebar-nav-link-text-color) !important;
+}
+
+.theme-sidebar-nav-link-text-active {
+  color: var(--sidebar-nav-link-text-active) !important;
+}
+
+.theme-sidebar-nav-link-text-hover {
+  &:hover {
+    color: var(--sidebar-nav-link-text-hover) !important;
+  }
+}

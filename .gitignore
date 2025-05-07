@@ -1,0 +1,65 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+package-lock.json
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+apps/angular-app/node_modules/
+apps/angular-app/dist/
+apps/angular-app/reports/
+apps/angular-app/.angular/cache
+apps/angular-app/.angular/17.3.*
+
+apps/angular-app/.vscode/*
+apps/angular-app/!.vscode/settings.json
+apps/angular-app/!.vscode/tasks.json
+apps/angular-app/!.vscode/launch.json
+apps/angular-app/!.vscode/extensions.json
+apps/angular-app/.sass-cache/
+
+configs/eslint-config-jbpm/node_modules/
+
+packages/adapters/dist/
+packages/adapters/node_modules/
+
+packages/domain/dist/
+packages/domain/node_modules/
+
+packages/loader/dist/
+packages/loader/node_modules/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+/reports
+
+# System files
+.DS_Store
+Thumbs.db

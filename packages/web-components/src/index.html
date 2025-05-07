@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
+    <title>Stencil Component Starter</title>
+
+    <script type="module" src="/build/web-components.esm.js"></script>
+    <script nomodule src="/build/web-components.js"></script>
+  </head>
+  <body>
+    <my-component first="Stencil" middle="'Don't call me a framework'" last="JS"></my-component>
+    <jbpm-login
+      bg-img = "https://media.istockphoto.com/id/642501464/photo/wonderful-ill-see-you-first-thing-on-monday.jpg?s=1024x1024&w=is&k=20&c=YIhPhT6ZrGe8J_5NIZ9eroXQvio7VoSNsm8N80H-n3A="
+      form-title = "Connectez-vous à loop."
+      form-description = "Connectezz-vous à votre espace loooop pour une gestion simple et fluide de vos processus d\'approbation."
+      user-label = "Login"
+      user-placeholder= "Saisissez votre loginn"
+      password-label = "Mot de passe"
+      password-placeholder = "Saisissez votre mot de passee"
+      submit-btn-text = "Se connecter"
+      forget-passwrd-text = "Mot de passe oublié ?"
+    >
+    <p slot="reset-password-component">I'll be placed after the h1</p>
+    </jbpm-login>
+    <jbpm-login-test>
+      <p slot="reset-password-component">I'm placed here</p>
+    </jbpm-login-test>
+    <jbpm-app-sidebar>
+    </jbpm-app-sidebar>
+  </body>
+</html>

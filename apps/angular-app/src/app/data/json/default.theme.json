@@ -1,0 +1,65 @@
+{
+  "layout_content": {
+    "bg": {
+      "color": "#f3f4f6"
+    },
+    "text": {
+      "color": "#000000"
+    }
+  },
+  "sidebar": {
+    "bg": {
+      "color": "#0596ff"
+    },
+    "nav": {
+      "link": {
+        "bg": {
+          "color": "#0596ff",
+          "active": "#00a39b",
+          "hover": "#00a39b"
+        },
+        "text": {
+          "color": "#ffffff",
+          "active": "#ffffff",
+          "hover": "#ffffff"
+        }
+      }
+    }
+  },
+  "navbar": {
+    "bg": {
+      "color": "#ffffff"
+    },
+    "usermenu": {
+      "bg": {
+        "color": "#ffffff"
+      },
+      "item": {
+        "bg": {
+          "color": "#ffffff",
+          "hover": "#f3f4f6"
+        },
+        "text": {
+          "color": "#000000",
+          "hover": "#000000"
+        }
+      }
+    }
+  },
+  "card": {
+    "bg": {
+      "color": "#ffffff"
+    },
+    "text": {
+      "color": "#000000"
+    }
+  },
+  "button": {
+    "bg": {
+      "color": "#00a39b"
+    },
+    "text": {
+      "color": "#ffffff"
+    }
+  }
+}

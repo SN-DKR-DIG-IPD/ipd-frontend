@@ -1,0 +1,384 @@
+<div class="p-2 sm:p-5 " >
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+
+    <span class="font-semibold text-red-600 text-[24px] text-[#0073E6]" i18n>{{ 'Request.Request' | translate }}</span>
+
+    <div class="flex">
+
+      <div class="relative inline-block text-left px-3 py-2 rounded-lg  ">
+        <button class="flex items-center gap-2 p-2 rounded-lg border mr-2 dropdown-container bg-red-600 text-white hover:bg-gray-600 active:bg-gray-600" (click)="toggleDropdown()" i18n>
+          <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="24" height="24" viewBox="0 0 64 64"
+          style="fill:#ffffff;" >
+          <path d="M 32 10 C 19.85 10 10 19.85 10 32 C 10 44.15 19.85 54 32 54 C 44.15 54 54 44.15 54 32 C 54 19.85 44.15 10 32 10 z M 32 14 C 41.941 14 50 22.059 50 32 C 50 41.941 41.941 50 32 50 C 22.059 50 14 41.941 14 32 C 14 22.059 22.059 14 32 14 z M 32 22 C 30.895 22 30 22.896 30 24 L 30 30 L 24 30 C 22.896 30 22 30.895 22 32 C 22 33.105 22.896 34 24 34 L 30 34 L 30 40 C 30 41.104 30.895 42 32 42 C 33.105 42 34 41.104 34 40 L 34 34 L 40 34 C 41.104 34 42 33.105 42 32 C 42 30.895 41.104 30 40 30 L 34 30 L 34 24 C 34 22.896 33.105 22 32 22 z"></path>
+          </svg>
+          {{ 'Request.NewRequest' | translate}}
+          <i class="fas fa-chevron-down ml-2"></i>
+        </button>
+
+        <div *ngIf="isDropdownOpen" class="absolute right-0 z-10 mt-2 w-48 bg-white rounded-md shadow-lg h-auto overflow-auto">
+          <ul class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu" *ngFor="let demande of processes" >
+            <li  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" (click)="openAddFormModal(demande)" >
+              {{demande['process-name']}}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <ng-container *ngIf="filtersVisible">
+
+          <div class="relative">
+            <select #typeSelect
+              [value]="activeFilters.type"
+              (change)="onFilterChange('type', $event)"
+              class="appearance-none bg-white px-3 py-2 border rounded-lg text-sm text-gray-600 cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
+            >
+              <option value="" i18n>Type</option>
+              <option *ngFor="let option of getFilterOptions('Type')" [value]="option">
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <div class="relative">
+            <select  #statusSelect
+              [value]="activeFilters.status"
+              (change)="onFilterChange('status', $event)"
+              class="appearance-none bg-white px-3 py-2 border rounded-lg text-sm text-gray-600 cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
+            >
+              <option value="" i18n>Status</option>
+              <option *ngFor="let option of getFilterOptions('Status')" [value]="option">
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <div class="relative">
+            <select  #PrioritySelect
+              [value]="activeFilters.priority"
+              (change)="onFilterChange('priority', $event)"
+              class="appearance-none bg-white px-3 py-2 border rounded-lg text-sm text-gray-600 cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
+              i18n>
+              <option value="" >Priority</option>
+              <option *ngFor="let option of getFilterOptions('Priority')" [value]="option">
+                { option , select ,LOW{ LOW } MEDIUM{ MEDIUM } HIGH { HIGH } other { Unknow } }
+              </option>
+            </select>
+          </div>
+
+          <!-- Filtres de date -->
+          <div class="flex flex-wrap gap-2">
+            <!-- Date de début -->
+            <div class="relative">
+              <div class="flex items-center">
+                <input
+                  type="date"
+                  [value]="dateDebut"
+                  (change)="handleDateChange($event, 'startDate')"
+                  [max]="dateFin"
+                  class="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+                >
+                <button
+                  class="appearance-none bg-white px-3 py-2 border rounded-lg text-sm text-gray-600 hover:border-blue-500 focus:outline-none focus:border-blue-500 min-w-[150px] text-left flex items-center justify-between"
+                >
+                  <span>{{ dateDebut ? formatDate(dateDebut) : 'Date de début' }}</span>
+                  <i class="fas fa-calendar-alt text-xs ml-2"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Date de fin -->
+            <div class="relative">
+              <div class="flex items-center">
+                <input
+                  type="date"
+                  [value]="dateFin"
+                  (change)="handleDateChange($event, 'endDate')"
+                  [min]="dateDebut"
+                  class="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+                >
+                <button
+                  class="appearance-none bg-white px-3 py-2 border rounded-lg text-sm text-gray-600 hover:border-blue-500 focus:outline-none focus:border-blue-500 min-w-[150px] text-left flex items-center justify-between"
+                >
+                  <span>{{ dateFin ? formatDate(dateFin) : 'Date de fin' }}</span>
+                  <i class="fas fa-calendar-alt text-xs ml-2"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button
+            *ngIf="hasActiveFilters()"
+            (click)="resetFilters()"
+            class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 focus:outline-none"
+          >
+            <i class="fas fa-times mr-1"></i>
+            Reset Filters
+          </button>
+
+          <div class="flex flex-wrap gap-2 mt-2" *ngIf="hasActiveFilters()">
+            <div
+              *ngFor="let filter of getActiveFiltersDisplay()"
+              class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center"
+            >
+              {{ filter }}
+            </div>
+          </div>
+
+        </ng-container>
+        <!-- Boutons de recherche et filtre -->
+        <button class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg border" (click)="toggleFilters()">
+          <i class="fas fa-filter hover:text-[#0066FF]"></i>
+        </button>
+        <button class="p-2 text-gray-600 hover:text-[#0066FF] rounded-full border">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Table Container -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div class="overflow-x-auto">
+      <table class="w-full hidden md:table" *ngIf="isLoading">
+        <thead>
+        <tr class="bg-gray-50 border-b border-gray-200 text-left text-sm text-gray-500">
+          <th *ngFor="let header of tableHeaders" class="px-4 sm:px-6 py-4 font-medium" >
+            {{ header.label | translate }}
+          </th>
+        </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+        <tr *ngFor="let item of skeletonArray" class="hover:bg-gray-50">
+          <!-- ID -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+          </td>
+          <!-- Type -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
+          </td>
+          <!-- Sujet -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-40"></div>
+          </td>
+          <!-- Status -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-6 bg-gray-200 rounded-full animate-pulse w-24"></div>
+          </td>
+          <!-- Date début -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+          </td>
+          <!-- Date fin -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+          </td>
+          <!-- Responsable -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-28"></div>
+          </td>
+          <!-- Priorité -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-6 bg-gray-200 rounded-full animate-pulse w-20"></div>
+          </td>
+          <!-- Approbation -->
+          <td class="px-4 sm:px-6 py-4">
+            <div class="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
+          </td>
+          <!-- Progress bar -->
+          <td class="px-4 sm:px-6 py-4 w-48">
+            <div class="w-full bg-gray-100 rounded-full h-2">
+              <div class="h-2 bg-gray-200 rounded-full animate-pulse w-4/5"></div>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+
+<!--      table sans skeleton-->
+      <!-- Table pour écrans larges -->
+      <table class="w-full hidden md:table" *ngIf="!isLoading">
+        <thead>
+          <tr
+            class="bg-gray-50 border-b border-gray-200 text-left text-sm text-gray-500"
+          >
+            <th
+              *ngFor="let header of tableHeaders"
+              class="px-4 sm:px-6 py-4 font-medium"
+              i18n >
+              {{ header.label | translate }}
+            </th>
+          </tr>
+        </thead>
+       <!-- {{currentUserTask['task-summary'][0] | json}} -->
+       <!-- {{currentUserTaskInfos[currentUserTask['task-summary'][0]['task-id']] | json }} -->
+        <tbody class="divide-y divide-gray-200 cursor-pointer" >
+          <tr
+            *ngFor="let task of currentUserTask['task-summary']"
+            class="hover:bg-gray-50 transition-colors"
+            (click)="openDetailModal(task)"
+            >
+            <td class="px-4 sm:px-6 py-4">
+              <span class="text-red-600 font-medium">{{
+                task['task-id']
+
+              }}</span>
+            </td>
+            <td class="px-4 sm:px-6 py-4 text-gray-700">
+              <span class="line-clamp-1 text-blue-900 font-medium" *ngIf="currentUserTaskInfos[task['task-id']]">
+                {{ currentUserTaskInfos[task['task-id']]['processInstanceDetail']['process-name']}}</span>
+            </td>
+           <!-- <td class="px-4 sm:px-6 py-4 text-[#0066FF]">
+             <span class="line-clamp-1">{{ task["task-description"] }}</span>
+           </td> -->
+            <td class="px-4 sm:px-6 py-4 ">
+              <span [class]="getStatusClass(task['task-status'])" class=" outline outline-1 border-slate-200 rounded-none">
+                {{task['task-status']}}
+              </span>
+            </td>
+            <td class="px-4 sm:px-6 py-4 text-blue-900 font-medium">
+                <ng-container *ngIf="task['task-created-on']">
+                    {{ task['task-created-on']['java.util.Date']| date: 'dd/MM/yyyy' }}
+                </ng-container>
+            </td>
+            <td class="px-4 sm:px-6 py-4 text-blue-900 font-medium ">
+                <ng-container *ngIf="task['task-expiration-time']">
+                    {{ (task['task-expiration-time']['java.util.Date']| date: 'dd/MM/yyyy')||'' }}
+                </ng-container>
+            </td>
+<!--            responsable-->
+            <td class="px-4 sm:px-6 py-4">
+              <div  *ngIf="currentUserTaskInfos[task['task-id']]">{{ currentUserTaskInfos[task['task-id']]['processInstanceDetail']?.initiator }}</div>
+            </td>
+            <td class="px-4 sm:px-6 py-4">
+              <span [class]="getPriorityClass(task['task-priority'])" class=" outline outline-1 px-2 rounded">
+                {{getPriority(task['task-priority'])}}
+              </span>
+            </td>
+<!--            approbateur -->
+            <td class="px-4 sm:px-6 py-4">
+              <div  *ngIf="currentUserTaskInfos[task['task-id']]">
+                {{task['task-actual-owner'] }} <span *ngIf="currentUserTaskInfos[task['task-id']]['processInfo']?.workItemParams">{{+ ' - ' + currentUserTaskInfos[task['task-id']]['workItemInfo']['work-item-params']!.GroupId}}</span>
+              </div>
+            </td>
+            <td class="px-4 sm:px-6 py-4 w-48">
+              <div class="w-full bg-gray-100 rounded-full h-2">
+                <div
+                  [class]="getProgressClass(task['task-status'])"
+                  [style.width.%]="80"
+                ></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Vue mobile -->
+      <div class="md:hidden">
+        <div
+          *ngFor="let request of requests"
+          class="p-4 border-b border-gray-200 space-y-3"
+        >
+          <div class="flex justify-between items-start">
+            <span class="text-[#0066FF] font-medium">{{ request.numero }}</span>
+            <span [class]="getStatusClass(request.statut)">
+              {{ request.statut }}
+            </span>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between">
+              <span class="text-gray-500 text-sm" i18n>Type</span>
+              <span class="text-gray-700">{{ request.type }}</span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-gray-500 text-sm" i18n>Sujet</span>
+              <span class="text-[#0066FF]">{{ request.sujet }}</span>
+            </div>
+
+            <div class="flex justify-between items-center">
+              <span class="text-gray-500 text-sm" i18n>Priorité</span>
+              <span [class]="getPriorityClass(1)">
+                {{ request.priorite }}
+              </span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-gray-500 text-sm" i18n>Dates</span>
+              <div class="text-right">
+                <div class="text-gray-700">{{ request.dateDebut }}</div>
+                <div class="text-gray-700">{{ request.dateFin }}</div>
+              </div>
+            </div>
+
+            <div>
+              <span class="text-gray-500 text-sm block mb-2" i18n>Progression</span>
+              <div class="w-full bg-gray-100 rounded-full h-2">
+                <div
+                  [class]="getProgressClass(request.statut)"
+                  [style.width.%]="request.tauxDachevement"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- pagnation -->
+  <div class="flex items-center justify-center mt-4">
+    <div class="bg-red-600 p-2 rounded-full">
+      <div class="flex items-center text-white space-x-2">
+        <span class="ml-4">Pages : {{currentPage}}</span>
+        <div class="flex items-center space-x-2">
+          <button class="p-2 rounded-full hover:bg-gray-800 transition-colors"
+            (click)="previousPage()"
+            [disabled]="currentPage === 1 || isPageChanging"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div class="h-6 w-px bg-gray-700"></div>
+          <button class="p-2 rounded-full hover:bg-gray-800 transition-colors"
+           (click)="nextPage()"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <div class="h-6 w-px bg-gray-700"></div>
+          <button class="p-2 rounded-full hover:bg-gray-800 transition-colors"
+            (click)="gotoPage(1)"
+          >
+            <span class="material-icons">
+restart_alt
+</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<div *ngIf="selectedRequest">
+  <app-detail [requestDetail]="selectedRequest" [currentUserTaskInfos]="currentUserTaskInfos" [closeModal]="closeDetailModal" (modalShowChange)="setCloseDetailModal($event)" (onCompleteTask)="completeTask($event)"></app-detail>
+</div>
+<app-modif [form]="taskForm" [closeModal]="closeModifModal" (modalShowChange)="setCloseModifModal($event)"></app-modif>
+<div *ngIf="selectedDemande">
+  <div class="fixed inset-0 bg-gray-800 bg-opacity-50 z-40"></div>
+
+  <div class="fixed inset-0 flex items-center justify-center z-50">
+      <div class=" p-6 rounded-lg  w-full mx-4 ">
+          <app-new-request [demande]="selectedDemande" (onStartNewProcess)="startProcess($event)" (click)="closeModalDemande()"></app-new-request>
+      </div>
+  </div>
+</div>
+
