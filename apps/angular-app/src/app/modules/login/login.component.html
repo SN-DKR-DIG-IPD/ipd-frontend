@@ -43,7 +43,6 @@
         </div>
       </div>
 
-
       <!-- Colonne du formulaire -->
       <div class="flex flex-col basis-1/2">
         <div class="my-auto ml-20 mr-32 gap-y-2">
@@ -61,42 +60,36 @@
           </div>
 
           <div class="w-full flex">
-            <form id="kc-form-login" class="w-full" (ngSubmit)="onSubmit()" #form="ngForm">
-              <div class="grid grid-cols-1 gap-y-2" [formGroup]="userCredentials!">
+            <form id="kc-form-login" class="w-full" (ngSubmit)="onSubmit()" [formGroup]="loginForm">
+              <div class="grid grid-cols-1 gap-y-2">
 
                 <div class="relative">
                   <input formControlName="username"
                          id="username"
                          type="text"
-                         [(ngModel)]="login.username"
                          placeholder=" "
                          class="peer w-full px-3 pt-6 pb-2 border-1 focus:outline-0 rounded-lg placeholder-transparent"
                          [ngClass]="{
-         'border-primary': usernameCtrl?.valid && (usernameCtrl?.dirty || usernameCtrl?.touched),
-         'border-error': (usernameCtrl?.invalid && (usernameCtrl?.dirty || usernameCtrl?.touched)) || (formSubmitted && usernameCtrl?.invalid)
+         'border-primary': loginForm.get('username')?.valid && (loginForm.get('username')?.dirty || loginForm.get('username')?.touched),
+         'border-error': (loginForm.get('username')?.invalid && (loginForm.get('username')?.dirty || loginForm.get('username')?.touched))
        }"
                   />
-
 
                   <label for="username"
                          class="absolute left-3 top-2 text-sm transition-all
               peer-placeholder-shown:top-4
               peer-focus:top-2 peer-focus:text-sm"
                          [ngClass]="{
-      'text-primary': usernameCtrl?.valid && (usernameCtrl?.dirty || usernameCtrl?.touched),
-      'text-error': (usernameCtrl?.invalid && (usernameCtrl?.dirty || usernameCtrl?.touched)) || (formSubmitted && usernameCtrl?.invalid)
+      'text-primary': loginForm.get('username')?.valid && (loginForm.get('username')?.dirty || loginForm.get('username')?.touched),
+      'text-error': (loginForm.get('username')?.invalid && (loginForm.get('username')?.dirty || loginForm.get('username')?.touched))
     }">
                     Identifiant
                   </label>
-
-
                 </div>
-
 
                 <div class="relative">
                   <input
                     formControlName="password"
-                    [(ngModel)]="login.password"
                     tabindex="2"
                     id="password"
                     name="password"
@@ -104,8 +97,8 @@
                     placeholder=" "
                     class="peer w-full px-3 pt-6 pb-2 border-1 focus:outline-0 rounded-lg placeholder-transparent"
                     [ngClass]="{
-      'border-primary': passwordCtrl?.valid && (passwordCtrl?.dirty || passwordCtrl?.touched),
-      'border-error': (passwordCtrl?.invalid && (passwordCtrl?.dirty || passwordCtrl?.touched)) || (formSubmitted && passwordCtrl?.invalid)
+      'border-primary': loginForm.get('password')?.valid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched),
+      'border-error': (loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched))
     }"
                   />
 
@@ -115,8 +108,8 @@
            peer-placeholder-shown:top-4
            peer-focus:top-2 peer-focus:text-sm"
                     [ngClass]="{
-      'text-primary': passwordCtrl?.valid && (passwordCtrl?.dirty || passwordCtrl?.touched),
-      'text-error': (passwordCtrl?.invalid && (passwordCtrl?.dirty || passwordCtrl?.touched)) || (formSubmitted && passwordCtrl?.invalid)
+      'text-primary': loginForm.get('password')?.valid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched),
+      'text-error': (loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched))
     }"
                   >
                     Mot de passe
@@ -126,67 +119,65 @@
                     <img src="assets/images/login/eye-off.png" id="togglePassword" alt="check password" style="cursor: pointer; display: none"/>
                     <img src="assets/images/login/eye.png" id="unbucklePassword" alt="lock password" style="cursor: pointer; display: none"/>
                   </div>
-
                 </div>
-
 
                 <div>
-
-                <span *ngIf="isLoading" id="input-error"
-                      class=" text-sm text-error"
-                      aria-live="polite">
-                                                        {{ loadingText }}
-                                                    </span>
-
-          </div>
-
-          <div class="flex flex-row justify-between items-center">
-            <div class="">
-              <div id="kc-form-options">
-
-                <div class="checkbox">
-                  <label class="flex items-center text-black">
-                    <input
-                      tabindex="3"
-                      id="rememberMe"
-                      name="rememberMe"
-                      type="checkbox"
-                      class="peer accent-primary"
-                  >
-                  <span class="ml-2 peer-checked:text-primary transition-colors duration-200">
-                                                                        Se souvenir de moi
-                                                                    </span>
-                  </label>
+                  <span *ngIf="errorMessage" id="input-error"
+                        class="text-sm text-error"
+                        aria-live="polite">
+                    {{ errorMessage }}
+                  </span>
+                  <span *ngIf="isLoading" id="loading-message"
+                        class="text-sm text-primary"
+                        aria-live="polite">
+                    Connexion en cours...
+                  </span>
                 </div>
 
-            </div>
+                <div class="flex flex-row justify-between items-center">
+                  <div class="">
+                    <div id="kc-form-options">
+                      <div class="checkbox">
+                        <label class="flex items-center text-black">
+                          <input
+                            tabindex="3"
+                            id="rememberMe"
+                            name="rememberMe"
+                            type="checkbox"
+                            class="peer accent-primary"
+                          >
+                          <span class="ml-2 peer-checked:text-primary transition-colors duration-200">
+                            Se souvenir de moi
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="text-primary">
+                    <span><a tabindex="5" href="">Mot de passe oublié?</a></span>
+                  </div>
+                </div>
+
+                <div class="text-lg mt-6">
+                  <input type="hidden" id="id-hidden-input" name="credentialId" />
+                  <input tabindex="4"
+                         class="focus:outline-0 py-3 px-5 text-white rounded-lg font-semi-bold w-full cursor-pointer bg-primary"
+                         name="login"
+                         id="kc-login"
+                         type="submit"
+                         value="Se connecter"
+                         [disabled]="isLoading || loginForm.invalid"/>
+                </div>
+
+
+              </div>
+            </form>
           </div>
-
-          <div class=" text-primary">
-
-            <span><a tabindex="5" href="">Mot de passe oublié?</a></span>
-
         </div>
       </div>
-
-      <div class="text-lg mt-6">
-        <input type="hidden" id="id-hidden-input" name="credentialId"
-         />
-      <input tabindex="4"
-             class="
-           focus:outline-0 py-3 px-5 text-white rounded-lg font-semi-bold w-full cursor-pointer bg-primary"
-             name="login"
-             id="kc-login"
-             type="submit"
-             value="Se connecter"/>
     </div>
   </div>
-  </form>
-</div>
-</div>
-</div>
-</div>
-</div>
 </div>
 
 

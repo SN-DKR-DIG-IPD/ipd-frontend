@@ -1,1 +1,14 @@
-<router-outlet></router-outlet>
+  <router-outlet></router-outlet>
+
+<script>
+  // Vérification temporaire de la configuration
+  setTimeout(() => {
+    console.log('Vérification de la configuration...');
+    console.log('window.__env:', window.__env);
+    if (window.__env && window.__env.keycloak) {
+      console.log('Configuration Keycloak trouvée:', window.__env.keycloak);
+    } else {
+      console.error('Configuration Keycloak non trouvée!');
+    }
+  }, 1000);
+</script>

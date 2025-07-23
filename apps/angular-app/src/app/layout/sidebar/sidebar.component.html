@@ -1,93 +1,72 @@
-<div class="flex flex-col mt-2">
-  <div class="basis-1">
-    <div class="flex items-center" [ngClass]="{'justify-center': reduce}">
-      <div class="{{reduce ? '' : 'ml-auto'}}">
-        <img src="assets/images/{{reduce ? 'logoReduce' : 'logo'}}.png" alt="logo" class="h-10">
+<div class="sidebar-split-container">
+  <!-- Colonne verticale bleue extensible -->
+  <div class="sidebar-split-blue" [ngClass]="{'expanded': !isReduced}">
+    <div class="sidebar-split-burger" (click)="toggleSidebar()">
+      <lucide-icon name="menu" class="sidebar-split-icon"></lucide-icon>
+      <span *ngIf="!isReduced" class="sidebar-split-label">Menu</span>
+    </div>
+    <div class="sidebar-split-icons">
+      <div class="sidebar-split-icon-group">
+        <lucide-icon name="settings" class="sidebar-split-icon"></lucide-icon>
+        <span *ngIf="!isReduced" class="sidebar-split-label">Configurations</span>
       </div>
-      <div class="{{reduce ? '' : 'ml-auto'}}">
-        <lucide-icon name="{{reduce ? 'chevrons-right' : 'chevrons-left'}}"
-                     class="h-10 text-secondary font-bold cursor-pointer"
-                     (click)="reduceSidebar()">
-        </lucide-icon>
+      <div class="sidebar-split-icon-group sidebar-split-notif">
+        <lucide-icon name="bell" class="sidebar-split-icon"></lucide-icon>
+        <span class="sidebar-split-badge">3</span>
+        <span *ngIf="!isReduced" class="sidebar-split-label">Notifications</span>
       </div>
     </div>
+    <div class="sidebar-split-avatar">
+      <!-- Avatar ou bloc vide d'origine, rollback -->
+    </div>
+    <div class="sidebar-profile-bottom mt-auto w-full">
+      <app-user-profile-sidebar
+        [username]="(username$ | async) ?? ''"
+        [roles]="(roles$ | async) ?? []"
+        [groups]="(groups$ | async) ?? []">
+      </app-user-profile-sidebar>
+    </div>
   </div>
-
-  <div class="basis-1 m-4">
-    <div class="flex flex-col">
-      <div class="px-3">
-        <span class="text-lg text-secondary font-bold" [ngClass]="{'hidden': reduce}">MENU</span>
-      </div>
-      <div class="mb-4">
-        <ul>
-          <li *ngFor="let item of menuItems; let i = index"
-              class="relative group flex flex-col cursor-pointer rounded-lg"
-              [routerLink]="item.route"
-              [ngClass]="{
-      'bg-liBlue': selectedMenu === i && !selectedSubMenu && item.subMenu === undefined
-    }"
-              (click)="goTo(i)">
-
-            <div class="flex items-center justify-between w-full rounded-lg p-3">
-              <div class="flex items-center space-x-2">
-                <lucide-icon
-                  [name]="item.icon"
-                  class="h-4"
-                  [ngClass]="{'text-primary fill-primary': selectedMenu === i && item.subMenu === undefined}"></lucide-icon>
-
-                <!-- Texte du menu -->
-                <span class="whitespace-nowrap"
-                      [ngClass]="{
-                        'hidden': reduce,
-                        'text-primary': selectedMenu === i && item.subMenu === undefined
-                      }">{{ item.label }}</span>
-
-                <a class="relative group">
-                  <div *ngIf="reduce"
-                       class="absolute ml-0.5 top-1/2 -translate-y-1/2 bg-white text-black shadow-custom-tooltip rounded-md px-3 py-2 text-sm font-semibold opacity-0 group-hover:opacity-100 group-hover:visible invisible transition-opacity duration-300 z-50 flex flex-col space-y-1 min-w-max"
-                       style="pointer-events: auto;">
-    <span class="font-bold" [routerLink]="item.route" [ngClass]="{
-          'text-primary': selectedMenu === i && item.subMenu === undefined
-        }">{{ item.label }}</span>
-                    <ng-container *ngIf="item.subMenu">
-      <span class="font-light" [routerLink]="sub.route" *ngFor="let sub of item.subMenu"
+  <!-- Bloc menu principal blanc -->
+  <div class="sidebar-split-main">
+    <div class="sidebar-split-header">
+      <img src="assets/images/logo.png" alt="logo Institut Pasteur de Dakar" class="sidebar-split-logo" />
+      <span class="sidebar-split-menu-title">MENU</span>
+    </div>
+    <div class="sidebar-split-menu">
+      <ul class="sidebar-split-menu-list">
+        <li *ngFor="let item of menuItems; let i = index"
+            class="sidebar-split-menu-item"
+            [routerLink]="!item.subMenu ? item.route : null"
             [ngClass]="{
-              'text-xs text-primary': selectedSubMenu === sub.route
-            }">
-        {{ sub.label }}
-      </span>
-                    </ng-container>
-                  </div>
-                </a>
-              </div>
-
-              <!-- Icone plus/minus -->
-              <ng-container *ngIf="item.subMenu as subMenu">
-                <lucide-icon
-                  *ngIf="subMenu.length > 0 && !reduce"
-                  [name]="selectedMenuIndex === i ? 'minus' : 'plus'"
-                  class="h-4 cursor-pointer text-primary"
-                  [ngClass]="{ 'hidden': reduce }"
-                  (click)="toggleSubMenu(i)">
-                </lucide-icon>
-              </ng-container>
-            </div>
-
-            <!-- Sous-menu -->
-            <ul *ngIf="selectedMenuIndex === i && item.subMenu && !reduce" class="ml-6">
-              <li *ngFor="let sub of item.subMenu"
-                  class="flex items-center space-x-2 rounded-lg p-3"
-                  [routerLink]="sub.route"
-                  (click)="selectSubMenu(sub.route)"
-                  [ngClass]="{
-        'bg-liBlue': selectedSubMenu === sub.route
-      }">
-                <span class="whitespace-nowrap {{selectedSubMenu === sub.route ? 'text-primary' : ''}}">{{ sub.label }}</span>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </div>
+              'active': selectedMenu === i && !selectedSubMenu && !item.subMenu,
+              'open': selectedMenuIndex === i && item.subMenu
+            }"
+            (click)="!item.subMenu ? goTo(i) : null">
+          <div class="sidebar-split-menu-link" (click)="item.subMenu ? toggleSubMenu(i) : null">
+            <lucide-icon
+              [name]="item.icon"
+              class="sidebar-split-menu-icon"
+              [ngClass]="{'active-icon': selectedMenu === i && !item.subMenu}"
+            ></lucide-icon>
+            <span class="sidebar-split-menu-label">{{ item.label }}</span>
+            <button *ngIf="item.subMenu" class="sidebar-split-plus-btn" (click)="$event.stopPropagation(); toggleSubMenu(i)">
+              <span [ngClass]="{'rotated': selectedMenuIndex === i}">+</span>
+            </button>
+          </div>
+          <ul *ngIf="selectedMenuIndex === i && item.subMenu" class="sidebar-split-submenu-list">
+            <li *ngFor="let sub of item.subMenu"
+                class="sidebar-split-submenu-item"
+                [routerLink]="sub.route"
+                (click)="selectSubMenu(sub.route)"
+                [ngClass]="{
+                  'active': selectedSubMenu === sub.route
+                }">
+              <span class="sidebar-split-submenu-label">{{ sub.label }}</span>
+            </li>
+          </ul>
+        </li>
+      </ul>
     </div>
   </div>
 </div>

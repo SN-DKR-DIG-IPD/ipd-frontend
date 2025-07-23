@@ -11,21 +11,25 @@ import {VehicleReservationComponent} from "./pages/vehicle-reservation/vehicle-r
 import {TicketReservationComponent} from "./pages/ticket-reservation/ticket-reservation.component";
 import {ShuttleReservationComponent} from "./pages/shuttle-reservation/shuttle-reservation.component";
 import {SummaryComponent} from "./pages/summary/summary.component";
-
-
+import { TaskFormComponent } from './task-form.component';
+import { ReactiveFormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 
 @NgModule({
-  declarations: [DemandComponent, OMNationaleComponent, OMInternationaleComponent, CompanionsComponent, PerdiemComponent, VehicleReservationComponent, TicketReservationComponent, ShuttleReservationComponent, SummaryComponent],
+  declarations: [DemandComponent, OMNationaleComponent, OMInternationaleComponent, CompanionsComponent, PerdiemComponent, VehicleReservationComponent, TicketReservationComponent, ShuttleReservationComponent, SummaryComponent, TaskFormComponent],
   imports: [
     CommonModule,
     DemandRoutingModule,
     TimelineComponent,
+    ReactiveFormsModule,
+    TranslateModule.forChild()
   ],
   exports: [
     OMNationaleComponent,
     OMInternationaleComponent,
     CompanionsComponent,
-    PerdiemComponent, VehicleReservationComponent, TicketReservationComponent, ShuttleReservationComponent, SummaryComponent
+    PerdiemComponent, VehicleReservationComponent, TicketReservationComponent, ShuttleReservationComponent, SummaryComponent,
+    TaskFormComponent
   ]
 })
 export class DemandModule { }

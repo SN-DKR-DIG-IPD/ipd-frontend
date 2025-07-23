@@ -5,13 +5,27 @@
   <title>IPD</title>
   <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- Content Security Policy pour développement local -->
+  <!-- En production, remplacer par une CSP plus stricte -->
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;
+                 script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* http://jbpm.localhost:* https://jbpm.localhost:* https://unpkg.com https://fonts.googleapis.com;
+                 style-src 'self' 'unsafe-inline' http://localhost:* https://localhost:* http://jbpm.localhost:* https://jbpm.localhost:* https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com;
+                 img-src 'self' data: blob: http://localhost:* https://localhost:* http://jbpm.localhost:* https://jbpm.localhost:*;
+                 font-src 'self' data: http://localhost:* https://localhost:* http://jbpm.localhost:* https://jbpm.localhost:* https://fonts.gstatic.com;
+                 connect-src 'self' http://localhost:* https://localhost:* http://jbpm.localhost:* https://jbpm.localhost:* ws://localhost:* wss://localhost:* ws://jbpm.localhost:* wss://jbpm.localhost:*;
+                 frame-src 'self' http://localhost:* https://localhost:* http://jbpm.localhost:* https://jbpm.localhost:*;
+                 frame-ancestors 'self' http://localhost:* https://localhost:* http://jbpm.localhost:* https://jbpm.localhost:*;
+                 object-src 'none';
+                 base-uri 'self';
+                 form-action 'self' http://localhost:* https://localhost:* http://jbpm.localhost:* https://jbpm.localhost:*;">
+  
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet" type="text/css" /><!--
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet" />--><!--
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />-->
-  <!--<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />-->
+  <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet" type="text/css" />
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script defer src="http://localhost:8080/kie-server/services/rest/server/files/patternfly/js/jquery.min.js"></script>
+  <script src="env/env.js?v=1.2"></script>
+  <script defer src="/jbpm/files/patternfly/js/jquery.min.js"></script>
 
 </head>
 

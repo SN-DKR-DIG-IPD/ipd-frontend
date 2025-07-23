@@ -2,3 +2,8 @@
   <app-timeline [(currentStep)]="currentStep" [(maxLevel)]="maxLevel"></app-timeline>
 </div>
 <h1>natio</h1>
+
+<button (click)="onStartProcess()" [disabled]="isLoading">Start</button>
+<div *ngIf="isLoading">Chargement...</div>
+<div *ngIf="errorMsg" class="alert alert-danger">{{ errorMsg }}</div>
+<app-task-form *ngIf="showTaskForm && taskId" [containerId]="containerId" [taskId]="taskId"></app-task-form>

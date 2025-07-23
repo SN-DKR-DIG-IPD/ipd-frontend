@@ -207,7 +207,14 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
          let process = await this.containerAPI.displayAllProcesses(container['container-id'], this.defaultHeader)
          for(let elements of Object.values(process)){
             for(let element of elements){
-              this.processes.push(element)
+              // S'assure que process-id est bien présent
+              const el = element as any;
+              if (!el['process-id'] && el['id']) {
+                el['process-id'] = el['id'];
+              } else if (!el['process-id'] && el['name']) {
+                el['process-id'] = el['name'];
+              }
+              this.processes.push(el);
             }
          }
       }
@@ -634,8 +641,8 @@ activeFilter: string | null = null;
 
 
   async startProcess(e: ProcessType){
-   console.log('** e: ', e)
-   console.log('** header: ', this.defaultHeader)
+   console.log('Process utilisé pour création :', e);
+   console.log('process-id utilisé :', e['process-id']);
    this.createdProcessId= await this.processInstanceAPI.createOneProcessInstance(e['container-id'], e['process-id'], this.defaultHeader)
    console.log('** createdProcessId: ', this.createdProcessId)
    let createdProcessDetails = await this.processInstanceAPI.displayOneProcessInstanceDetail(e['container-id'], this.createdProcessId, this.defaultHeader)

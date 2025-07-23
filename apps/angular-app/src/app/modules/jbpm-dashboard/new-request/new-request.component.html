@@ -1,35 +1,71 @@
 <div class="relative z-10 pt-4 flex items-center justify-center p-6 animation-slide-in">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8 space-y-8 transform transition-all duration-500 hover:shadow-2xl">
+    <button class="p-4 flex pr-20 hover:bg-gray-100 rounded-full transition-colors">
+      <span class="material-icons" (click)="onclose()">close</span>
+    </button>
 
-  <div
-    class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8 space-y-8 transform transition-all duration-500 hover:shadow-2xl"
-    [ngStyle]="{ opacity: 0, animation: 'slideIn 0.5s ease-out forwards' }"
-  >
-  <button class="p-4 flex pr-20 hover:bg-gray-100 rounded-full transition-colors">
-    <span class="material-icons" (click)="onclose()">close</span>
-  </button>    <!-- Barre de progression -->
-    <!-- En-tête -->
-    <div class="text-center transform transition-all duration-500 hover:scale-105">
-      <p class="text-2xl font-bold text-gray-900" i18n>Request Type : <span class="text-blue-600">{{processName}}</span></p>
-      <p class="mt-2 text-gray-600">{{processVersion}}</p>
+    <!-- Affichage des erreurs -->
+    <div *ngIf="errorMsg" class="bg-red-100 text-red-700 p-3 rounded mb-4">{{ errorMsg }}</div>
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-8">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
     </div>
-     <!-- Boutons de navigation -->
-      <div class="flex justify-between space-x-4">
-        <button
-          type="button"
-          (click)="startProcess()"
-          class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Start
-        </button>
 
-        <button
-          type="button"
-          (click)="exitProcess()"
-          class="ml-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Exit
+    <!-- Wizard étape 1 : Choix du process -->
+    <ng-container *ngIf="step === 1 && !isLoading">
+      <div class="text-center">
+        <p class="text-2xl font-bold text-gray-900">Démarrer une nouvelle demande</p>
+        <p class="mt-2 text-gray-600">Sélectionnez le type de OM et le processus</p>
+      </div>
+      <form (ngSubmit)="startProcessWizard()" class="space-y-4">
+        <div>
+          <label class="block mb-1 font-semibold">Type de OM</label>
+          <select class="w-full rounded-lg border p-2" [(ngModel)]="selectedContainerId" name="container" (change)="onContainerChange()">
+            <option *ngFor="let c of containers" [value]="c['container-id']">{{ c['container-alias'] || c['container-id'] }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block mb-1 font-semibold">Processus</label>
+          <select class="w-full rounded-lg border p-2" [(ngModel)]="selectedProcessId" name="process">
+            <option *ngFor="let p of processes" [value]="p['process-id']">{{ p['process-name'] }}</option>
+          </select>
+        </div>
+        <div class="flex justify-between space-x-4 mt-6">
+          <button type="submit" [disabled]="!selectedContainerId || !selectedProcessId || isLoading"
+            class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Start
+          </button>
+          <button type="button" (click)="exitProcess()"
+            class="ml-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Exit
+          </button>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- Wizard étape 2 : Formulaire dynamique de la tâche utilisateur -->
+    <ng-container *ngIf="step === 2 && !isLoading">
+      <div class="text-center mb-4">
+        <p class="text-2xl font-bold text-gray-900">Formulaire de la tâche</p>
+        <p class="mt-2 text-gray-600">Remplissez le formulaire pour compléter la tâche</p>
+      </div>
+      <!-- Affichage du formulaire dynamique -->
+      <app-task-form *ngIf="userTaskContainerId && userTaskId"
+        [containerId]="userTaskContainerId"
+        [taskId]="userTaskId"
+        (completed)="onTaskCompleted()">
+      </app-task-form>
+      <div class="flex justify-between space-x-4 mt-6">
+        <button type="button" (click)="submitUserTaskForm()"
+          class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+          Soumettre
+        </button>
+        <button type="button" (click)="exitProcess()"
+          class="ml-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Annuler
         </button>
       </div>
+    </ng-container>
   </div>
 </div>
 

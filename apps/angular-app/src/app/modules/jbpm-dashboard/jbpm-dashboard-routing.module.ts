@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { JbpmDashboardComponent } from './jbpm-dashboard/jbpm-dashboard.component';
 import {ReportingComponent} from "./reporting/reporting.component";
+import {NotificationComponent} from "./notification/notification.component";
 
 
 const routes: Routes = [
@@ -16,6 +17,10 @@ const routes: Routes = [
   {
     path : 'reporting',
     component: ReportingComponent
+  },
+  {
+    path : 'notifications',
+    component: NotificationComponent
   }
 ];
 

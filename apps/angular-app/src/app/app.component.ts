@@ -1,9 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { KeycloakService } from 'keycloak-angular';
 import { NgxPermissionsService, NgxRolesService } from 'ngx-permissions';
-import { UserService } from './core/service/user/user.service';
 import { AccountAPI, BPMDefaultConfigAPI} from './injections';
-import { KeycloakProfile } from 'keycloak-js';
 import type { IAccountAPI, IContainerAPI, IDefaultConfigAPI } from '@jbpm/domain';
 import {HttpHeaders} from "@angular/common/http";
 import {environment} from "../environments/environment";
@@ -19,7 +17,6 @@ export class AppComponent implements OnInit {
     private keycloakService: KeycloakService,
     private permissionsService: NgxPermissionsService,
     private ngxRolesService: NgxRolesService,
-    private userService: UserService,
 		@Inject(AccountAPI) private accountAPI: IAccountAPI,
 		@Inject(BPMDefaultConfigAPI) private bpmDefaultConfigAPI: IDefaultConfigAPI, private translate: TranslateService
   ) {
@@ -27,24 +24,58 @@ export class AppComponent implements OnInit {
   }
 
   public async ngOnInit() {
-    // const isLoggedIn = await this.keycloakService.isLoggedIn();
-
-    // if (isLoggedIn) {
-    //   await this.keycloakService.loadUserProfile().then((userProfile: KeycloakProfile) => {
-    //     this.userService.setUserProfile(userProfile);
-    //   });
-    //   const roles = await this.keycloakService.getUserRoles();
-    //   // @TODO replace roles with permissions
-    //   this.permissionsService.loadPermissions(roles);
-    // }
-      this.permissionsService.loadPermissions(['SUPER_ADMIN']);
+    this.permissionsService.loadPermissions(['SUPER_ADMIN']);
     await (async () => {
-      this.bpmDefaultConfigAPI.setAPIBaseUrl(environment.bpmAPIBaseUrl)
-      this.bpmDefaultConfigAPI.setBusinessCentralAPIBaseUrl(environment.businessCentralAPIBaseUrl)
-    })()
-
+      this.bpmDefaultConfigAPI.setAPIBaseUrl(environment.bpmAPIBaseUrl);
+      this.bpmDefaultConfigAPI.setBusinessCentralAPIBaseUrl(environment.businessCentralAPIBaseUrl);
+    })();
+    
+    // Attendre que Keycloak soit initialisé avant de configurer les headers
+    setTimeout(async () => {
+      await this.initializeKeycloakHeaders();
+    }, 2000);
   }
 
-
-
+  private async initializeKeycloakHeaders(): Promise<void> {
+    try {
+      console.log('Initialisation des headers d\'authentification...');
+      
+      // Vérifier si Keycloak est initialisé et connecté
+      const isLoggedIn = await this.keycloakService.isLoggedIn();
+      console.log('Utilisateur connecté à Keycloak:', isLoggedIn);
+      
+      if (isLoggedIn) {
+        const keycloakInstance = this.keycloakService.getKeycloakInstance();
+        if (keycloakInstance && keycloakInstance.token) {
+          console.log('Token Keycloak disponible');
+          const keycloakHeader = { 
+            'Authorization': `Bearer ${keycloakInstance.token}`, 
+            'Accept': 'application/json' 
+          };
+          sessionStorage.setItem('defaultHeader', JSON.stringify(keycloakHeader));
+          console.log('Headers Keycloak configurés');
+          return;
+        }
+      }
+      
+      // Fallback vers l'authentification Basic
+      console.log('Utilisation de l\'authentification Basic en fallback');
+      const username = 'wbadmin';
+      const password = 'wbadmin';
+      const basicAuth = 'Basic ' + btoa(username + ':' + password);
+      const defaultHeader = { 'Authorization': basicAuth, 'Accept': 'application/json' };
+      sessionStorage.setItem('defaultHeader', JSON.stringify(defaultHeader));
+      console.log('Headers Basic configurés');
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation des headers:', error);
+      // Fallback vers l'authentification Basic en cas d'erreur
+      const username = 'wbadmin';
+      const password = 'wbadmin';
+      const basicAuth = 'Basic ' + btoa(username + ':' + password);
+      const defaultHeader = { 'Authorization': basicAuth, 'Accept': 'application/json' };
+      sessionStorage.setItem('defaultHeader', JSON.stringify(defaultHeader));
+      console.log('Headers Basic configurés en fallback suite à erreur');
+    }
+  }
 }

@@ -1,0 +1,24 @@
+<!-- Configuration CSP pour la production -->
+<!-- Remplacer la meta tag dans index.html par celle-ci en production -->
+
+<!--
+<meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self';
+               script-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com;
+               style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com;
+               img-src 'self' data: blob:;
+               font-src 'self' data: https://fonts.gstatic.com;
+               connect-src 'self' wss://your-production-domain.com;
+               frame-src 'self';
+               frame-ancestors 'self';
+               object-src 'none';
+               base-uri 'self';
+               form-action 'self';">
+-->
+
+<!-- Instructions d'utilisation :
+1. En développement : utiliser la CSP permissive dans index.html
+2. En production : remplacer par cette CSP stricte
+3. Adapter les domaines selon votre environnement de production
+4. Tester en staging avant de déployer en production
+--> 

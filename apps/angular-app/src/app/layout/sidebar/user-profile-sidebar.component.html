@@ -1,0 +1,21 @@
+<div class="user-profile-modern">
+  <div class="user-profile-row">
+  <div class="avatar-block">
+    <img *ngIf="avatarUrl; else defaultAvatar" [src]="avatarUrl" class="avatar-img" alt="Avatar utilisateur" />
+    <ng-template #defaultAvatar>
+      <div class="avatar-placeholder">{{ username ? username.charAt(0).toUpperCase() : '?' }}</div>
+    </ng-template>
+  </div>
+  <div class="user-info">
+    <div class="user-name">{{ username }}</div>
+      <div class="user-meta" style="margin-bottom: 0.3rem;">
+        <span class="user-meta-label">Groupe :</span>
+        <span class="badge badge-group">{{ groups.length ? groups[0] : 'Aucun groupe' }}</span>
+      </div>
+      <div class="user-actions">
+        <button class="user-btn primary" type="button">Profil</button>
+        <button class="user-btn outline" (click)="onLogout()">Déconnexion</button>
+    </div>
+    </div>
+  </div>
+</div>

@@ -1,23 +1,19 @@
-// IIFE used for local dev
+  // IIFE used for local dev
 (function (window) {
   window.__env = window.__env || {};
 
   // SIS API url
   window.__env = {
     keycloak: {
-      // Url of the Identity Provider
-      issuer: 'http://localhost:8082/',
-
-      // Realm
-      realm: 'etalon',
-
-      // client
-      clientId: 'etalon-client',
+      // URL de base du serveur Keycloak (sans /realms)
+      issuer: 'http://localhost:4200/realms/atos',
+      realm: 'atos',
+      clientId: 'atos-client',
     },
 
-    apiUrl: 'http://localhost:8081',
-    bpmAPIBaseUrl : 'http://localhost:8080/kie-server/services/rest/',
-    businessCentralAPIBaseUrl: 'http://localhost:8080/business-central/rest/'
+    apiUrl: '/api',
+    bpmAPIBaseUrl : '/jbpm/api/',
+    businessCentralAPIBaseUrl: '/jbpm/business-central/rest/'
   };
 
   // Whether or not to enable debug mode

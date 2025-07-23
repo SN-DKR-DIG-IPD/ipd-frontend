@@ -38,7 +38,15 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": ["src/favicon.ico", "src/assets"],
+            "assets": [
+              "src/favicon.ico",
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "src/env",
+                "output": "/env"
+              }
+            ],
             "styles": [
               "@angular/material/prebuilt-themes/indigo-pink.css",
               "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
@@ -122,10 +130,8 @@
               "buildTarget": "JbpmFrontend:build:production"
             },
             "development": {
-              "buildTarget": "JbpmFrontend:build:development"
-            },
-            "fr": {
-              "buildTarget": "JbpmFrontend:build:development,fr"
+              "buildTarget": "JbpmFrontend:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

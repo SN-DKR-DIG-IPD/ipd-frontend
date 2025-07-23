@@ -27,7 +27,6 @@ import { RouterModule } from '@angular/router';
 import { MaterialModule } from './material.module';
 import { NgxPermissionsModule } from 'ngx-permissions';
 import { ContentLayoutComponent } from '../layout/content-layout/content-layout.component';
-import { SidebarComponent } from '../layout/sidebar/sidebar.component';
 import { NavbarComponent } from '../layout/navbar/navbar.component';
 import { InputComponent } from './components/input/input.component';
 import { ControlValueAccessorDirective } from './directives/control-value-accessor.directive';
@@ -37,11 +36,14 @@ import { ModalComponent } from './components/modal/modal.component';
 import { SafeHtmlPipe } from './pipes/safe-html.pipe';
 import { HtmlDirective } from './directives/html.directive';
 import {BreadcrumbComponent} from "../layout/breadcrumb/breadcrumb.component";
+import { SidebarComponent } from '../layout/sidebar/sidebar.component';
+import { UserProfileSidebarComponent } from '../layout/sidebar/user-profile-sidebar.component';
 
 @NgModule({
   declarations: [
     ContentLayoutComponent,
     SidebarComponent,
+    UserProfileSidebarComponent,
     NavbarComponent,
     InputComponent,
     SelectComponent,
@@ -76,6 +78,7 @@ import {BreadcrumbComponent} from "../layout/breadcrumb/breadcrumb.component";
     NgxPermissionsModule,
     ContentLayoutComponent,
     SidebarComponent,
+    UserProfileSidebarComponent,
     NavbarComponent,
     InputComponent,
     SelectComponent,

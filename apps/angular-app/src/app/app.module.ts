@@ -1,5 +1,5 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule, APP_INITIALIZER } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
@@ -13,7 +13,11 @@ import { ErrorStateMatcher, ShowOnDirtyErrorStateMatcher } from '@angular/materi
 import { AppLoader } from '@jbpm/loader';
 import { BPMDefaultConfigAPI, AccountAPI, ContainerAPI, ProcessInstanceAPI, TaskAPI, WorkItemsAPI, FormAPI, DiagramAPI, FrontDemandeAPI, GroupAPI, ProcessAPI, DocumentAPI } from './injections';
 import {TranslateHttpLoader} from "@ngx-translate/http-loader";
-import {LucideAngularModule} from "lucide-angular";
+import { LucideAngularModule, Edit2, MoreVertical, Menu, Settings, Bell, BarChart3, Plus, Globe } from "lucide-angular";
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http);
@@ -29,7 +33,9 @@ export function HttpLoaderFactory(http: HttpClient) {
     HttpClientModule,
     AppRoutingModule,
     KeycloakAngularModule,
-    LucideAngularModule,
+    CommonModule,
+    RouterModule,
+    LucideAngularModule.pick({ Edit2, MoreVertical, Menu, Settings, Bell, BarChart3, Plus, Globe }),
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
@@ -41,12 +47,12 @@ export function HttpLoaderFactory(http: HttpClient) {
     SharedModule,
   ],
   providers: [
-    // {
-    //   provide: APP_INITIALIZER,
-    //   useFactory: initKeycloak,
-    //   deps: [KeycloakService],
-    //   multi: true,
-    // },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initKeycloak,
+      deps: [KeycloakService],
+      multi: true,
+    },
     { provide: ErrorStateMatcher, useClass: ShowOnDirtyErrorStateMatcher },
 		{ provide: BPMDefaultConfigAPI, useValue: AppLoader.getDefaultConfig() },
 		{ provide: AccountAPI, useValue: AppLoader.getAccount() },
@@ -60,6 +66,7 @@ export function HttpLoaderFactory(http: HttpClient) {
 		{ provide: GroupAPI, useValue: AppLoader.getGroup()},
 		{ provide: DocumentAPI, useValue: AppLoader.getDocument()},
 		{ provide: FrontDemandeAPI, useValue: AppLoader.getFrontDemande()},
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
   ],
   bootstrap: [AppComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

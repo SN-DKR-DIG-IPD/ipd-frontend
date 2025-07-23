@@ -5,19 +5,15 @@
   // SIS API url
   window.__env = {
     keycloak: {
-      // Url of the Identity Provider
-      issuer: 'http://localhost:8082/',
-
-      // Realm
+      // Url via proxy Angular
+      issuer: '/realms',
       realm: 'etalon',
-
-      // client
       clientId: 'etalon-client',
     },
 
-    apiUrl: 'http://localhost:8081',
-    bpmAPIBaseUrl : 'http://localhost:8080/kie-server/services/rest/',
-    businessCentralAPIBaseUrl: 'http://localhost:8080/business-central/rest/'
+    apiUrl: '/api',
+    bpmAPIBaseUrl: '/jbpm/api/',
+    businessCentralAPIBaseUrl: '/jbpm/business-central/rest/'
   };
 
   // Whether or not to enable debug mode

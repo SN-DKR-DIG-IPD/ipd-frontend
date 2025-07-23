@@ -15,8 +15,21 @@ import {
 
 import {DefaultConfig ,Account, Container, ProcessInstance, Task, WorkItems, Form, Diagram, FrontDemande, Group, Document, IDefaultConfigAPI, IContainerAPI, IAccountAPI, IProcessInstanceAPI, ITaskAPI, IWorkItemsAPI, IFormAPI, IDiagramAPI, IGroupAPI, IFrontDemandeAPI, IDocumentAPI, Process, IProcessAPI } from "@jbpm/domain";
 
+// Ajouter un adapter localStorage simple
+class LocalStorageSessionAdapter {
+  storeValue(key: string, value: string, duration: number): void {
+    localStorage.setItem(key, value);
+  }
+  getValue(key: string): string {
+    return localStorage.getItem(key) || '';
+  }
+  flush(): void {
+    localStorage.clear();
+  }
+}
+
 namespace AppLoader {
-	const sessionAdapter = new SessionCookieAdapter();
+	const sessionAdapter = new LocalStorageSessionAdapter();
 	const defaultConfigAdapter = new DefaultConfigAdapter();
 	const authenticationAdater = new AuthenticationRestAdapter();
 

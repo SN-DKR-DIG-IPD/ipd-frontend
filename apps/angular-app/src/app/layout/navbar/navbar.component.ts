@@ -1,25 +1,21 @@
 import { Component, EventEmitter, Input, Output, ElementRef, HostListener, OnInit } from '@angular/core';
-import { KeycloakProfile } from 'keycloak-js';
-import { KeycloakService } from 'keycloak-angular';
-import { UserService } from '../../core/service/user/user.service';
-import {ActivatedRoute, NavigationEnd, Router} from "@angular/router";
-import {filter, map} from "rxjs";
+import { ActivatedRoute, NavigationEnd, Router } from "@angular/router";
+import { filter, map } from "rxjs";
+import { AuthService } from '../../core/service/user/auth.service';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   @Input() isSidebarOpen = false;
   @Output() isSidebarOpenEvent = new EventEmitter<boolean>();
 
   isOpen = false;
-  userProfile: KeycloakProfile | null = null;
 
   constructor(
-    private userService: UserService,
-    private keycloakService: KeycloakService,
+    private authService: AuthService,
     private elementRef: ElementRef, private router: Router, private activatedRoute: ActivatedRoute
   ) {
     this.router.events
@@ -51,8 +47,9 @@ export class NavbarComponent {
         }
       });
   }
- /* ngOnInit(): void {
-    this.userProfile = this.userService.getUserProfile();
+
+  ngOnInit() {
+    // Les observables sont déjà initialisés dans le constructeur
   }
 
   @HostListener('document:click', ['$event'])
@@ -72,8 +69,11 @@ export class NavbarComponent {
   }
 
   logout(): void {
-    this.keycloakService.logout();
-  }*/
+    // À adapter selon ta logique de déconnexion
+    // Par exemple, vider le storage et recharger la page
+    sessionStorage.clear();
+    window.location.href = '/login';
+  }
 
   isMenuVisible = false;
   pageTitle = '';
@@ -108,6 +108,5 @@ export class NavbarComponent {
       this.isMenuVisible = false;
     });
   }
-
 }
 

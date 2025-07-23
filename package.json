@@ -5,7 +5,7 @@
 	"packageManager": "pnpm@9.14.4",
 	"engineStrict": true,
 	"engines": {
-		"pnpm": "9.12.1",
+		"pnpm": "9.14.4",
 		"node": ">=16"
 	},
 	"scripts": {
@@ -41,7 +41,6 @@
 	"keywords": [],
 	"author": "",
 	"license": "BSD-3-Clause",
-
 	"devDependencies": {
 		"@tsconfig/node16": "^1.0.3",
 		"@typescript-eslint/eslint-plugin": "^5.38.0",
@@ -52,16 +51,17 @@
 		"typescript": "^4.8.3",
 		"vitest": "^2.1.2"
 	},
-
 	"dependencies": {
+		"cors": "^2.8.5",
+		"express": "^5.1.0",
+		"http-proxy-middleware": "^3.0.5",
 		"npm-run-all": "^4.1.5"
 	},
-    "repository": {
-    "type": "git",
-    "url": "https://github.com/SN-DKR-DIG-TMP/jbpmPortal.git"
-  },
-  "publishConfig": {
-  "registry": "https://npm.pkg.github.com/"
-}
-
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/SN-DKR-DIG-TMP/jbpmPortal.git"
+	},
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com/"
+	}
 }

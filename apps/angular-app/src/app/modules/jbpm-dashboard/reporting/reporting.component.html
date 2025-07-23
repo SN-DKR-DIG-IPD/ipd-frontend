@@ -1,1 +1,260 @@
-<p>reporting works!</p>
+<div class="reporting-container p-6 bg-gray-50 min-h-screen">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Tableaux de Bord & Rapports</h1>
+        <p class="text-gray-600 mt-2">Analyse des performances et statistiques des processus</p>
+      </div>
+      <div class="flex gap-3">
+        <button 
+          (click)="refreshData()" 
+          [disabled]="isLoading"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Actualiser
+        </button>
+        <button 
+          (click)="exportToPDF()" 
+          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Export PDF
+        </button>
+        <button 
+          (click)="exportToExcel()" 
+          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Export Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex gap-4 items-center">
+      <div class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-700">Période:</label>
+        <select 
+          [(ngModel)]="dateRange" 
+          (change)="refreshData()"
+          class="border border-gray-300 rounded-md px-3 py-1 text-sm">
+          <option value="7">7 jours</option>
+          <option value="30">30 jours</option>
+          <option value="90">90 jours</option>
+          <option value="365">1 an</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-700">Container:</label>
+        <select 
+          [(ngModel)]="selectedContainer" 
+          (change)="refreshData()"
+          class="border border-gray-300 rounded-md px-3 py-1 text-sm">
+          <option value="">Tous</option>
+          <option value="ipd-national">IPD National</option>
+          <option value="ipd-international">IPD International</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!isLoading" class="space-y-8">
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Process Statistics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Processus</h3>
+          <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Total:</span>
+            <span class="font-semibold">{{ processStats.total }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-green-600">Terminés:</span>
+            <span class="font-semibold text-green-600">{{ processStats.completed }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-blue-600">En cours:</span>
+            <span class="font-semibold text-blue-600">{{ processStats.inProgress }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-red-600">Échoués:</span>
+            <span class="font-semibold text-red-600">{{ processStats.failed }}</span>
+          </div>
+          <div class="pt-2 border-t">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Taux de complétion:</span>
+              <span class="font-semibold text-blue-600">{{ getCompletionRate() }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Statistics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Tâches</h3>
+          <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Total:</span>
+            <span class="font-semibold">{{ taskStats.total }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-green-600">Terminées:</span>
+            <span class="font-semibold text-green-600">{{ taskStats.completed }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-yellow-600">En attente:</span>
+            <span class="font-semibold text-yellow-600">{{ taskStats.pending }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-red-600">En retard:</span>
+            <span class="font-semibold text-red-600">{{ taskStats.overdue }}</span>
+          </div>
+          <div class="pt-2 border-t">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Taux de complétion:</span>
+              <span class="font-semibold text-green-600">{{ getTaskCompletionRate() }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Average Times -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Temps Moyens</h3>
+          <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Processus:</span>
+            <span class="font-semibold">{{ formatTime(processStats.avgCompletionTime) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Tâches:</span>
+            <span class="font-semibold">{{ formatTime(taskStats.avgTaskTime) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Score -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Score Performance</h3>
+          <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-orange-600 mb-2">
+            {{ Math.round((getCompletionRate() + getTaskCompletionRate()) / 2) }}%
+          </div>
+          <div class="text-sm text-gray-600">Score global</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Monthly Trends -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Évolution Mensuelle</h3>
+        <div class="h-64">
+          <!-- TODO: Intégrer Chart.js ou autre librairie de graphiques -->
+          <div class="flex items-center justify-center h-full text-gray-500">
+            Graphique d'évolution mensuelle
+          </div>
+        </div>
+      </div>
+
+      <!-- Completion Rate -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Taux de Complétion</h3>
+        <div class="h-64">
+          <!-- TODO: Intégrer Chart.js ou autre librairie de graphiques -->
+          <div class="flex items-center justify-center h-full text-gray-500">
+            Graphique de taux de complétion
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Performers -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Top Processes -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Processus les Plus Actifs</h3>
+        <div class="space-y-4">
+          <div *ngFor="let process of topProcesses; let i = index" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-semibold text-blue-600">
+                {{ i + 1 }}
+              </div>
+              <div>
+                <div class="font-medium text-gray-900">{{ process.name }}</div>
+                <div class="text-sm text-gray-600">{{ process.count }} instances</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-semibold text-green-600">{{ process.successRate }}%</div>
+              <div class="text-sm text-gray-600">Succès</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Users -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Utilisateurs les Plus Actifs</h3>
+        <div class="space-y-4">
+          <div *ngFor="let user of topUsers; let i = index" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-sm font-semibold text-green-600">
+                {{ i + 1 }}
+              </div>
+              <div>
+                <div class="font-medium text-gray-900">{{ user.name }}</div>
+                <div class="text-sm text-gray-600">{{ user.tasks }} tâches</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-semibold text-blue-600">{{ formatTime(user.avgTime) }}</div>
+              <div class="text-sm text-gray-600">Temps moyen</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,59 @@
+{
+  "/jbpm/api": {
+    "target": "http://localhost:8082",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/jbpm/api": "/kie-server/services/rest/server"
+    },
+    "headers": {
+      "X-Forwarded-Host": "localhost:4200",
+      "X-Forwarded-Proto": "http"
+    }
+  },
+  "/jbpm/files": {
+    "target": "http://localhost:8082",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/jbpm/files": "/kie-server/services/rest/server/files"
+    },
+    "headers": {
+      "X-Forwarded-Host": "localhost:4200",
+      "X-Forwarded-Proto": "http"
+    }
+  },
+  "/realms": {
+    "target": "http://localhost:8081",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": {
+      "X-Forwarded-Host": "localhost:4200",
+      "X-Forwarded-Proto": "http"
+    }
+  },
+  "/resources": {
+    "target": "http://localhost:8081",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": {
+      "X-Forwarded-Host": "localhost:4200",
+      "X-Forwarded-Proto": "http"
+    }
+    },
+  "/admin": {
+    "target": "http://localhost:8081",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": {
+      "X-Forwarded-Host": "localhost:4200",
+      "X-Forwarded-Proto": "http"
+    }
+  },
+  "/ws": {
+    "target": "ws://localhost:8082",
+    "ws": true,
+    "secure": false,
+    "changeOrigin": true
+  }
+} 

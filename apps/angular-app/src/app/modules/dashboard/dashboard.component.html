@@ -1,424 +1,228 @@
 <div>
+  <!-- Loading indicator for containers -->
+  <div *ngIf="isLoadingContainers" class="flex justify-center items-center p-8">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <span class="ml-2">Chargement des containers...</span>
+  </div>
+
+  <!-- Dashboard content -->
+  <div *ngIf="!isLoadingContainers">
+    <!-- Indicators Section -->
   <div class="flex flex-row w-full divide-x divide-divideColor">
     <div class="flex-1 p-5">
       <div class="flex flex-col gap-3">
-
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-white">
             <lucide-icon name="combine" class="w-4 h-4"></lucide-icon>
           </div>
           <span>Total demande OM</span>
         </div>
-
         <div class="border-b border-dashed border-dashedColor pb-3">
-          <span class="text-2xl font-bold">15</span>
+            <span class="text-2xl font-bold">{{ indicators.totalDemandesOM }}</span>
         </div>
-
         <div>
-          <span class="text-xs text-updateColor">Mise à jour : 16 juillet 2025</span>
+            <span class="text-xs text-updateColor">Mise à jour : {{ formatDate(currentDate) }}</span>
+          </div>
         </div>
       </div>
-    </div>
+      
     <div class="flex-1 p-5">
       <div class="flex flex-col gap-3">
-
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 flex items-center justify-center rounded-full bg-nationalColor text-white">
             <lucide-icon name="globe-lock" class="w-4 h-4"></lucide-icon>
           </div>
           <span>OM nationale</span>
         </div>
-
         <div class="border-b border-dashed border-dashedColor pb-3">
-          <span class="text-2xl font-bold">10</span>
+            <span class="text-2xl font-bold">{{ indicators.totalOMNationale }}</span>
         </div>
-
         <div>
-          <span class="text-xs text-updateColor">Mise à jour : 16 juillet 2025</span>
+            <span class="text-xs text-updateColor">Mise à jour : {{ formatDate(currentDate) }}</span>
+          </div>
         </div>
       </div>
-    </div>
+      
     <div class="flex-1 p-5">
       <div class="flex flex-col gap-3">
-
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 flex items-center justify-center rounded-full bg-internationalColor text-white">
             <lucide-icon name="globe" class="w-4 h-4"></lucide-icon>
           </div>
           <span>OM internationale</span>
         </div>
-
         <div class="border-b border-dashed border-dashedColor pb-3">
-          <span class="text-2xl font-bold">05</span>
+            <span class="text-2xl font-bold">{{ indicators.totalOMInternationale }}</span>
         </div>
-
         <div>
-          <span class="text-xs text-updateColor">Mise à jour : 16 juillet 2025</span>
+            <span class="text-xs text-updateColor">Mise à jour : {{ formatDate(currentDate) }}</span>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- New Request Button -->
+    <div class="flex justify-between items-center mb-4">
+      <div class="flex space-x-4">
+        <button
+          class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition"
+          routerLink="/dashboard/tasks"
+        >
+          <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          Mes Tâches
+        </button>
+      </div>
+      
+      <button
+        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition"
+        (click)="ouvrirDialogNouvelleDemande()"
+      >
+        + Nouvelle demande
+      </button>
   </div>
 
+    <!-- Process List Section -->
   <div class="flex flex-col gap-y-6 p-5">
     <div>
       <span class="font-bold text-lg">Liste des demandes OM</span>
     </div>
-    <div class="grid grid-cols-5 gap-2">
-      <div>
-        <input
-          type="text" placeholder="Référence OM"
-          class="rounded-lg border border-inputBorder p-2 w-full focus:outline-none focus:border-inputBorder">
-      </div>
-      <div>
-        <select
-          class="w-full rounded-lg bg-transparent focus:outline-none focus:border-inputBorder border border-inputBorder"
-        >
-          <option [value]="''" disabled selected>Type de OM</option>
-          <option [value]="'Nationale'">Nationale</option>
-          <option [value]="'Internationale'">Internationale</option>
-        </select>
-      </div>
-      <div>
-        <input
-          type="date"
-          class="rounded-lg border border-inputBorder p-2 w-full focus:outline-none focus:border-inputBorder">
-      </div>
-      <div>
-        <select
-          class="w-full rounded-lg bg-transparent focus:outline-none focus:border-inputBorder border border-inputBorder"
-        >
-          <option [value]="''" disabled selected>Statut de la demande</option>
-          <option [value]="'New'">New</option>
-          <option [value]="'Validée'">Validée</option>
-          <option [value]="'Rejetée'">Rejetée</option>
-        </select>
-      </div>
-      <div>
-        <button class="bg-primary text-white p-2 rounded-lg items-center w-full">Rechercher</button>
-      </div>
-    </div>
-    <div class="max-h-60 overflow-x-scroll">
-      <table class="table-auto w-full">
-        <thead class="bg-thBackground">
-        <tr class="text-left text-thBlue">
-          <th class="p-2 rounded-tl-lg rounded-bl-lg">Réference</th>
-          <th class="p-2">Type OM</th>
-          <th class="p-2">Date début</th>
-          <th class="p-2">Date fin</th>
-          <th class="p-2">Statut</th>
-          <th class="p-2">Approbateur</th>
-          <th class="p-2">Rôle approbateur</th>
-          <th class="p-2">Taux de complétude</th>
-          <th class="p-2 rounded-tr-lg rounded-br-lg">Actions</th>
-        </tr>
-        </thead>
-        <tbody class="divide-y divide-divideColor">
-        <tr>
-          <td class="p-2 font-bold">1</td>
-          <td class="p-2">Nationale</td>
-          <td class="p-2 font-bold">03-02-2025</td>
-          <td class="p-2 font-bold">03-02-2025</td>
-          <td class="p-2">
-            <span class="inline-block px-2 py-1 text-xs text-validateText border border-validateBorder rounded-lg uppercase">validée</span>
-          </td>
-          <td class="p-2">Yacine BA</td>
-          <td class="p-2">-</td>
-          <td class="p-2">
-            <div class="flex items-center w-full">
-              <div class="w-full bg-gray-100 rounded-full h-2">
-                <div class="h-2 bg-blue-500 rounded-full" style="width: 80%"></div>
-              </div>
-              <span class="ml-2">70%</span>
-            </div>
-          </td>
-          <td class="p-2 relative group flex justify-end items-center align-middle">
-            <lucide-icon name="circle-ellipsis" class="cursor-pointer text-updateColor"></lucide-icon>
-
-            <div class="absolute p-1 font-bold text-black bg-white shadow-custom-tooltip rounded-lg
-  opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-300
-  top-full right-0 z-10">
-              <ul>
-                <li class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-liBlue hover:rounded-lg whitespace-nowrap">
-                  <lucide-icon name="eye" class="w-4 h-4"></lucide-icon> Consulter
-                </li>
-                <li class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-liBlue hover:rounded-lg whitespace-nowrap">
-                  <lucide-icon name="pen" class="w-4 h-4"></lucide-icon> Modifier
-                </li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="p-2 font-bold">2</td>
-          <td class="p-2">Internationale</td>
-          <td class="p-2 font-bold">03-02-2025</td>
-          <td class="p-2 font-bold">03-02-2025</td>
-          <td class="p-2">
-            <span class="inline-block px-2 py-1 text-xs text-validateText border border-validateBorder rounded-lg uppercase">validée</span>
-          </td>
-          <td class="p-2">Yacine BA</td>
-          <td class="p-2">-</td>
-          <td class="p-2">
-            <div class="flex items-center w-full space-x-2">
-              <div class="w-full rounded-full h-2">
-                <div class="h-2 bg-progressionColor rounded-full" style="width: 100%"></div>
-              </div>
-              <lucide-icon name="badge-check" class="text-progressionColor"></lucide-icon>
-            </div>
-          </td>
-          <td class="p-2 relative group flex justify-end items-center align-middle">
-            <lucide-icon name="circle-ellipsis" class="cursor-pointer text-updateColor"></lucide-icon>
-            <div class="absolute p-1 font-bold text-black bg-white shadow-custom-tooltip rounded-lg
-  opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-300
-  top-full right-0 z-10">
-              <ul>
-                <li class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-liBlue hover:rounded-lg whitespace-nowrap">
-                  <lucide-icon name="eye" class="w-4 h-4"></lucide-icon> Consulter
-                </li>
-                <li class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-liBlue hover:rounded-lg whitespace-nowrap">
-                  <lucide-icon name="pen" class="w-4 h-4"></lucide-icon> Modifier
-                </li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-    </div>
+    <app-liste-instance-demande #listeInstanceDemande></app-liste-instance-demande>
+      
+      <!-- Pagination -->
     <div class="flex flex-row mt-6 px-4 gap-4">
       <div class="basis-1/2 flex items-center gap-4">
         <div class="p-2">
           <div class="flex items-center space-x-2">
-
-            <!-- Bouton Précédent -->
-            <button class="p-2 rounded-lg border border-[#F1F2F4] hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+              <!-- Previous Button -->
+              <button 
+                class="p-2 rounded-lg border border-[#F1F2F4] hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
                     (click)="previousPage()"
-                    [disabled]="currentPage === 1">
+                [disabled]="pagination.currentPage === 1">
               <lucide-icon name="chevron-left"></lucide-icon>
             </button>
 
             <!-- Pages -->
-            <ng-container *ngFor="let page of pages">
-              <button class="px-3 py-1 rounded hover:bg-primary hover:text-white"
-                      [ngClass]="{'bg-[#F8F8F8]': currentPage === page}"
+              <ng-container *ngFor="let page of pagination.pages">
+                <button 
+                  class="px-3 py-1 rounded hover:bg-primary hover:text-white"
+                  [ngClass]="{'bg-[#F8F8F8]': pagination.currentPage === page}"
                       (click)="gotoPage(page)">
                 {{ page }}
               </button>
             </ng-container>
 
             <!-- Ellipsis -->
-            <span *ngIf="showEllipsis" class="px-2">...</span>
+              <span *ngIf="pagination.showEllipsis" class="px-2">...</span>
 
-            <!-- Dernière page -->
-            <button *ngIf="totalPages > 1 && !pages.includes(totalPages)"
+              <!-- Last page -->
+              <button 
+                *ngIf="pagination.totalPages > 1 && !pagination.pages.includes(pagination.totalPages)"
                     class="px-3 py-1 rounded hover:bg-primary hover:text-white"
-                    (click)="gotoPage(totalPages)">
-              {{ totalPages }}
+                (click)="gotoPage(pagination.totalPages)">
+                {{ pagination.totalPages }}
             </button>
 
-            <!-- Bouton Suivant -->
-            <button class="p-2 rounded-lg border border-[#F1F2F4] hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+              <!-- Next Button -->
+              <button 
+                class="p-2 rounded-lg border border-[#F1F2F4] hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
                     (click)="nextPage()"
-                    [disabled]="currentPage === totalPages">
+                [disabled]="pagination.currentPage === pagination.totalPages">
               <lucide-icon name="chevron-right"></lucide-icon>
             </button>
-
+            </div>
           </div>
         </div>
+
+        <div class="basis-1/2 flex justify-end items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-600">Afficher</span>
+            <select 
+              class="border border-gray-300 rounded px-2 py-1 text-sm"
+              [(ngModel)]="pagination.itemsPerPage"
+              (change)="onItemsPerPageChange()">
+              <option [value]="5">5</option>
+              <option [value]="10">10</option>
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
+            </select>
+            <span class="text-sm text-gray-600">éléments par page</span>
       </div>
 
-      <div class="flex justify-end items-center space-x-4 w-full">
-        <!-- Texte : Affichage de X à Y sur Z -->
-        <div class="text-sm text-[#687588]">
-          Affichage de <span class="font-medium">{{ startIndex }}</span> à
-          <span class="font-medium">{{ endIndex }}</span> sur
-          <span class="font-medium">{{ totalItems }}</span> entrées
+          <div class="text-sm text-gray-600">
+            Affichage de {{ pagination.startIndex }} à {{ pagination.endIndex }} 
+            sur {{ pagination.totalItems }} résultats
         </div>
-
-        <!-- Select Afficher X -->
-        <div class="flex items-center text-sm space-x-2 border border-[#F1F2F4] rounded-lg px-3 py-2">
-          <label for="itemsPerPage">Afficher</label>
-          <select id="itemsPerPage"
-                  class="bg-transparent focus:outline-none border border-none appearance-none"
-                  [(ngModel)]="itemsPerPage"
-                  (change)="onItemsPerPageChange()"
-          >
-            <option *ngFor="let count of [5, 8, 10, 20]" [value]="count">{{ count }}</option>
-          </select>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="flex flex-col gap-y-6 p-5">
-    <div>
-      <span class="font-bold text-lg">Liste des demandes OM à valider</span>
+  <!-- Details Modal -->
+  <div *ngIf="showDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Détails de l'instance de processus</h2>
+        <button 
+          class="text-gray-500 hover:text-gray-700"
+          (click)="fermerDetailsModal()">
+          <lucide-icon name="x" class="w-6 h-6"></lucide-icon>
+        </button>
+      </div>
+      
+      <div *ngIf="selectedInstanceDetails" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+      <div>
+            <label class="block text-sm font-medium text-gray-700">ID de l'instance</label>
+            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['process-instance-id'] }}</p>
+      </div>
+      <div>
+            <label class="block text-sm font-medium text-gray-700">Container ID</label>
+            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['container-id'] }}</p>
+      </div>
+      <div>
+            <label class="block text-sm font-medium text-gray-700">Process ID</label>
+            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['process-id'] }}</p>
+      </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Statut</label>
+            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['process-instance-state'] }}</p>
     </div>
-    <div class="grid grid-cols-4 gap-2">
-      <div>
-        <input
-          type="text" placeholder="Référence OM"
-          class="rounded-lg border border-inputBorder p-2 w-full focus:outline-none focus:border-inputBorder">
-      </div>
-      <div>
-        <select
-          class="w-full rounded-lg bg-transparent focus:outline-none focus:border-inputBorder border border-inputBorder"
-        >
-          <option [value]="''" disabled selected>Type de OM</option>
-          <option [value]="'Nationale'">Nationale</option>
-          <option [value]="'Internationale'">Internationale</option>
-        </select>
-      </div>
-      <div>
-        <input
-          type="date"
-          class="rounded-lg border border-inputBorder p-2 w-full focus:outline-none focus:border-inputBorder">
-      </div>
-      <div>
-        <button class="bg-primary text-white p-2 rounded-lg items-center w-full">Rechercher</button>
-      </div>
-    </div>
-    <div class="max-h-60 overflow-x-scroll">
-      <table class="table-auto w-full">
-        <thead class="bg-thBackground">
-        <tr class="text-left text-thBlue">
-          <th class="p-2 rounded-tl-lg rounded-bl-lg">Réference</th>
-          <th class="p-2">Type OM</th>
-          <th class="p-2">Date début</th>
-          <th class="p-2">Date fin</th>
-          <th class="p-2">Approbateur</th>
-          <th class="p-2">Taux de complétude</th>
-          <th class="p-2 rounded-tr-lg rounded-br-lg">Actions</th>
-        </tr>
-        </thead>
-        <tbody class="divide-y divide-divideColor">
-        <tr>
-          <td class="p-2 font-bold">1</td>
-          <td class="p-2">Nationale</td>
-          <td class="p-2 font-bold">03-02-2025</td>
-          <td class="p-2 font-bold">03-02-2025</td>
-          <td class="p-2">Yacine BA</td>
-          <td class="p-2">
-            <div class="flex items-center w-full">
-              <div class="w-full bg-gray-100 rounded-full h-2">
-                <div class="h-2 bg-blue-500 rounded-full" style="width: 80%"></div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Date de début</label>
+            <p class="mt-1 text-sm text-gray-900">{{ formatDate(selectedInstanceDetails['start-date'] && selectedInstanceDetails['start-date']['java.util.Date']) }}</p>
               </div>
-              <span class="ml-2">70%</span>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Initiateur</label>
+            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['initiator'] || '-' }}</p>
             </div>
-          </td>
-          <td class="p-2 relative group flex justify-end items-center align-middle">
-            <lucide-icon name="circle-ellipsis" class="cursor-pointer text-updateColor"></lucide-icon>
-
-            <div class="absolute p-1 font-bold text-black bg-white shadow-custom-tooltip rounded-lg
-  opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-300
-  top-full right-0 z-10">
-              <ul>
-                <li class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-liBlue hover:rounded-lg whitespace-nowrap">
-                  <lucide-icon name="eye" class="w-4 h-4"></lucide-icon> Consulter
-                </li>
-                <li class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-liBlue hover:rounded-lg whitespace-nowrap">
-                  <lucide-icon name="check-check" class="w-4 h-4"></lucide-icon> Voir détails et valider
-                </li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="p-2 font-bold">2</td>
-          <td class="p-2">Internationale</td>
-          <td class="p-2 font-bold">03-02-2025</td>
-          <td class="p-2 font-bold">03-02-2025</td>
-          <td class="p-2">Yacine BA</td>
-          <td class="p-2">
-            <div class="flex items-center w-full space-x-2">
-              <div class="w-full rounded-full h-2">
-                <div class="h-2 bg-progressionColor rounded-full" style="width: 100%"></div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Taux de complétude</label>
+            <div class="mt-1">
+              <div class="w-full bg-gray-200 rounded h-4 relative">
+                <div
+                  class="h-4 rounded bg-blue-500"
+                  [style.width]="(selectedInstanceDetails['tauxCompletu'] || 0) + '%'"
+                ></div>
+                <span class="absolute inset-0 text-xs flex items-center justify-center font-bold text-blue-900">
+                  {{ selectedInstanceDetails['tauxCompletu'] !== undefined ? (selectedInstanceDetails['tauxCompletu'] + '%') : '-' }}
+                </span>
               </div>
-              <lucide-icon name="badge-check" class="text-progressionColor"></lucide-icon>
             </div>
-          </td>
-          <td class="p-2 relative group flex justify-end items-center align-middle">
-            <lucide-icon name="circle-ellipsis" class="cursor-pointer text-updateColor"></lucide-icon>
-
-            <div class="absolute p-1 font-bold text-black bg-white shadow-custom-tooltip rounded-lg
-  opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-300
-  top-full right-0 z-10">
-              <ul>
-                <li class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-liBlue hover:rounded-lg whitespace-nowrap">
-                  <lucide-icon name="eye" class="w-4 h-4"></lucide-icon> Consulter
-                </li>
-                <li class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-liBlue hover:rounded-lg whitespace-nowrap">
-                  <lucide-icon name="check-check" class="w-4 h-4"></lucide-icon> Voir détails et valider
-                </li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="flex flex-row mt-6 px-4 gap-4">
-      <div class="basis-1/2 flex items-center gap-4">
-        <div class="p-2">
-          <div class="flex items-center space-x-2">
-
-            <!-- Bouton Précédent -->
-            <button class="p-2 rounded-lg border border-[#F1F2F4] hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
-                    (click)="previousPage()"
-                    [disabled]="currentPage === 1">
-              <lucide-icon name="chevron-left"></lucide-icon>
-            </button>
-
-            <!-- Pages -->
-            <ng-container *ngFor="let page of pages">
-              <button class="px-3 py-1 rounded hover:bg-primary hover:text-white"
-                      [ngClass]="{'bg-[#F8F8F8]': currentPage === page}"
-                      (click)="gotoPage(page)">
-                {{ page }}
-              </button>
-            </ng-container>
-
-            <!-- Ellipsis -->
-            <span *ngIf="showEllipsis" class="px-2">...</span>
-
-            <!-- Dernière page -->
-            <button *ngIf="totalPages > 1 && !pages.includes(totalPages)"
-                    class="px-3 py-1 rounded hover:bg-primary hover:text-white"
-                    (click)="gotoPage(totalPages)">
-              {{ totalPages }}
-            </button>
-
-            <!-- Bouton Suivant -->
-            <button class="p-2 rounded-lg border border-[#F1F2F4] hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
-                    (click)="nextPage()"
-                    [disabled]="currentPage === totalPages">
-              <lucide-icon name="chevron-right"></lucide-icon>
-            </button>
-
           </div>
         </div>
       </div>
 
-      <div class="flex justify-end items-center space-x-4 w-full">
-        <!-- Texte : Affichage de X à Y sur Z -->
-        <div class="text-sm text-[#687588]">
-          Affichage de <span class="font-medium">{{ startIndex }}</span> à
-          <span class="font-medium">{{ endIndex }}</span> sur
-          <span class="font-medium">{{ totalItems }}</span> entrées
-        </div>
-
-        <!-- Select Afficher X -->
-        <div class="flex items-center text-sm space-x-2 border border-[#F1F2F4] rounded-lg px-3 py-2">
-          <label for="itemsPerPage">Afficher</label>
-          <select id="itemsPerPage1"
-                  class="bg-transparent focus:outline-none border border-none appearance-none"
-                  [(ngModel)]="itemsPerPage"
-                  (change)="onItemsPerPageChange()"
-          >
-            <option *ngFor="let count of [5, 8, 10, 20]" [value]="count">{{ count }}</option>
-          </select>
-        </div>
+      <div class="flex justify-end mt-6">
+        <button 
+          class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+          (click)="fermerDetailsModal()">
+          Fermer
+        </button>
       </div>
     </div>
   </div>
 </div>
+
+

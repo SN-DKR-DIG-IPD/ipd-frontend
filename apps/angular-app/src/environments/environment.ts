@@ -2,7 +2,7 @@ import { CustomWindow } from './custom-window';
 import { IEnvironment } from "./environment.base";
 
 export const environment: IEnvironment  = {
-  production: false,
+  production: true,
   keycloak: {
     // Url of the Identity Provider
     issuer: (window as unknown as CustomWindow).__env.keycloak.issuer,

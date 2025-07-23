@@ -1,11 +1,12 @@
 import { Routes } from '@angular/router';
 import { ContentLayoutComponent } from './layout/content-layout/content-layout.component';
+import { AuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
     {
       path: '',
       pathMatch: 'full',
-      redirectTo: 'login',
+      redirectTo: 'home',
     },
     // {
     //   path: '**',
@@ -31,6 +32,7 @@ export const routes: Routes = [
     {
     path: 'home',
     component: ContentLayoutComponent,
+    // canActivate: [AuthGuard], // Protéger la route home - DÉSACTIVÉ TEMPORAIREMENT
     children: [
       {
         path: '',
