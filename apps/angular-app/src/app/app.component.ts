@@ -24,14 +24,24 @@ export class AppComponent implements OnInit {
   }
 
   public async ngOnInit() {
+    console.log('🚀 AppComponent: Début de ngOnInit');
     this.permissionsService.loadPermissions(['SUPER_ADMIN']);
     await (async () => {
+      console.log('🔧 AppComponent: Configuration des URLs API');
+      console.log('🔧 AppComponent: bpmAPIBaseUrl =', environment.bpmAPIBaseUrl);
+      console.log('🔧 AppComponent: businessCentralAPIBaseUrl =', environment.businessCentralAPIBaseUrl);
+      
       this.bpmDefaultConfigAPI.setAPIBaseUrl(environment.bpmAPIBaseUrl);
       this.bpmDefaultConfigAPI.setBusinessCentralAPIBaseUrl(environment.businessCentralAPIBaseUrl);
     })();
     
+    // Initialiser immédiatement les headers avec fallback Basic
+    console.log('🚀 AppComponent: Initialisation immédiate des headers');
+    await this.initializeKeycloakHeaders();
+    
     // Attendre que Keycloak soit initialisé avant de configurer les headers
     setTimeout(async () => {
+      console.log('🚀 AppComponent: Réinitialisation des headers après délai');
       await this.initializeKeycloakHeaders();
     }, 2000);
   }
@@ -59,23 +69,23 @@ export class AppComponent implements OnInit {
       }
       
       // Fallback vers l'authentification Basic
-      console.log('Utilisation de l\'authentification Basic en fallback');
+      console.log('🔐 AppComponent: Utilisation de l\'authentification Basic en fallback');
       const username = 'wbadmin';
       const password = 'wbadmin';
       const basicAuth = 'Basic ' + btoa(username + ':' + password);
       const defaultHeader = { 'Authorization': basicAuth, 'Accept': 'application/json' };
       sessionStorage.setItem('defaultHeader', JSON.stringify(defaultHeader));
-      console.log('Headers Basic configurés');
+      console.log('🔐 AppComponent: Headers Basic configurés:', defaultHeader);
       
     } catch (error) {
       console.error('Erreur lors de l\'initialisation des headers:', error);
       // Fallback vers l'authentification Basic en cas d'erreur
-      const username = 'wbadmin';
-      const password = 'wbadmin';
-      const basicAuth = 'Basic ' + btoa(username + ':' + password);
-      const defaultHeader = { 'Authorization': basicAuth, 'Accept': 'application/json' };
-      sessionStorage.setItem('defaultHeader', JSON.stringify(defaultHeader));
-      console.log('Headers Basic configurés en fallback suite à erreur');
+    const username = 'wbadmin';
+    const password = 'wbadmin';
+    const basicAuth = 'Basic ' + btoa(username + ':' + password);
+    const defaultHeader = { 'Authorization': basicAuth, 'Accept': 'application/json' };
+    sessionStorage.setItem('defaultHeader', JSON.stringify(defaultHeader));
+      console.log('🔐 AppComponent: Headers Basic configurés en fallback suite à erreur:', defaultHeader);
     }
   }
 }

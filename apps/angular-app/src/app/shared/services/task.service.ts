@@ -43,7 +43,7 @@ export class TaskService {
    * Complete a task
    */
   async completeTask(taskId: number, containerId: string, data: any = {}, headers?: HeadersInit): Promise<void> {
-    await this.http.post<void>(
+    await this.http.put<void>(
       `${this.apiUrl}/containers/${containerId}/tasks/${taskId}/states/completed`,
       data,
       { headers: this.buildHeaders(headers) }

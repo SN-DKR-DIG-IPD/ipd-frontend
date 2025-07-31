@@ -10,7 +10,8 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Vérifier si la requête est pour jBPM
     if (request.url.includes('/jbpm/api')) {
-      console.log('Intercepteur: Requête jBPM détectée:', request.url);
+      console.log('🔐 Intercepteur: Requête jBPM détectée:', request.url);
+      console.log('🔐 Intercepteur: sessionStorage defaultHeader:', sessionStorage.getItem('defaultHeader'));
       
       // Vérifier les headers du sessionStorage
       const defaultHeader = sessionStorage.getItem('defaultHeader');
@@ -26,6 +27,7 @@ export class AuthInterceptor implements HttpInterceptor {
                 Accept: parsedHeader.Accept || 'application/json'
               }
             });
+            console.log('🔐 Intercepteur: Headers appliqués:', authReq.headers);
             return next.handle(authReq);
           }
         } catch (error) {
@@ -44,13 +46,27 @@ export class AuthInterceptor implements HttpInterceptor {
               Authorization: `Bearer ${keycloakInstance.token}`
             }
           });
+          console.log('🔐 Intercepteur: Headers Keycloak appliqués:', authReq.headers);
           return next.handle(authReq);
         }
       } catch (error) {
         console.error('Intercepteur: Erreur lors de l\'ajout du token Keycloak:', error);
       }
       
-      console.log('Intercepteur: Aucun token trouvé');
+      console.log('🔐 Intercepteur: Aucun token trouvé - Utilisation de l\'authentification Basic par défaut');
+      
+      // Fallback vers l'authentification Basic
+      const username = 'wbadmin';
+      const password = 'wbadmin';
+      const basicAuth = 'Basic ' + btoa(username + ':' + password);
+      const authReq = request.clone({
+        setHeaders: {
+          Authorization: basicAuth,
+          Accept: 'application/json'
+        }
+      });
+      console.log('🔐 Intercepteur: Headers Basic appliqués:', authReq.headers);
+      return next.handle(authReq);
     }
 
     // Pour les autres requêtes, continuer sans modification

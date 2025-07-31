@@ -3,9 +3,9 @@
     "target": "http://localhost:8082",
     "secure": false,
     "changeOrigin": true,
-    "pathRewrite": {
-      "^/jbpm/api": "/kie-server/services/rest/server"
-    },
+                      "pathRewrite": {
+                    "^/jbpm/api": "/kie-server/services/rest/server"
+                  },
     "headers": {
       "X-Forwarded-Host": "localhost:4200",
       "X-Forwarded-Proto": "http"
@@ -18,6 +18,15 @@
     "pathRewrite": {
       "^/jbpm/files": "/kie-server/services/rest/server/files"
     },
+    "headers": {
+      "X-Forwarded-Host": "localhost:4200",
+      "X-Forwarded-Proto": "http"
+    }
+  },
+  "/kie-server": {
+    "target": "http://localhost:8082",
+    "secure": false,
+    "changeOrigin": true,
     "headers": {
       "X-Forwarded-Host": "localhost:4200",
       "X-Forwarded-Proto": "http"

@@ -35,7 +35,8 @@ import { InboxTasksComponent } from './inbox-tasks/inbox-tasks.component';
     providers: [SafeHtmlPipe],
     exports: [
         JbpmDashboardComponent,
-        ListeInstanceDemandeComponent
+        ListeInstanceDemandeComponent,
+        DetailComponent
     ],
     imports: [
         CommonModule,

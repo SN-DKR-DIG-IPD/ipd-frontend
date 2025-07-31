@@ -17,9 +17,9 @@ export class ContainerService {
       
       // Récupère la réponse en JSON
       const result = await this.http.get(
-        `${this.apiUrl}/containers`,
-        { headers: httpHeaders }
-      ).toPromise();
+      `${this.apiUrl}/containers`,
+      { headers: httpHeaders }
+    ).toPromise();
       
       console.log('ContainerService: Réponse brute reçue:', result);
       console.log('ContainerService: Type de réponse:', typeof result);
@@ -90,11 +90,17 @@ export class ContainerService {
         httpHeaders = httpHeaders.set(key, value as string);
       });
     }
+    
+    console.log('🔍 ContainerService - URL pour les processus:', `${this.apiUrl}/containers/${containerId}/processes`);
+    
     const result = await this.http.get<any>(
-      `${this.apiUrl}/containers/${containerId}/processes/definitions`,
+      `${this.apiUrl}/containers/${containerId}/processes`,
       { headers: httpHeaders }
     ).toPromise();
-    return { processes: result['process-definition'] || [] };
+    
+    console.log('🔍 ContainerService - Réponse processus:', result);
+    
+    return { processes: result['processes'] || result['process-definition'] || [] };
   }
 
   /**

@@ -12,7 +12,7 @@
     },
 
     apiUrl: '/api',
-    bpmAPIBaseUrl : '/jbpm/api/',
+            bpmAPIBaseUrl : '/jbpm/api/',
     businessCentralAPIBaseUrl: '/jbpm/business-central/rest/'
   };
 

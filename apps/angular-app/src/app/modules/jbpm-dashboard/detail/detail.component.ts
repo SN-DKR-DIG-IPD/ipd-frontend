@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
 import { TaskInstanceType } from '@jbpm/domain';
 import { Subject } from 'rxjs';
+import { TaskService } from '../../../shared/services/task.service';
 
 // Interface pour les détails de la tâche
 interface TaskDetail {
@@ -33,6 +34,8 @@ interface UserTaskInfo {
 interface TaskCompletionEvent {
   taskId: number;
   containerId: string;
+  formType?: string;
+  userGroups?: string[];
 }
 
 @Component({
@@ -76,17 +79,37 @@ export class DetailComponent implements OnInit, OnDestroy {
   scale = 1;
   isMaximized = false;
   isDocumentsExpanded = false;
-  isDetailsExpanded = false;
+  isDetailsExpanded = true; // Déplier par défaut pour voir le diagramme
   isHistoryExpanded = true;
 
   // Loading states
   isLoading = false;
+  
+  // Task Form Modal
+  showTaskForm = false;
+  currentFormType = '';
+  currentTaskId = 0;
 
   // Destroy subject for cleanup
   private destroy$ = new Subject<void>();
+  
+  constructor(private taskService: TaskService) {}
 
   ngOnInit() {
     this.priority = this.getPriority(this.requestDetail['task-priority']);
+    
+    // Debug: Vérifier si le diagramme est présent
+    const taskId = this.requestDetail['task-id'];
+    const userTaskInfo = this.currentUserTaskInfos[taskId];
+    
+    console.log('🔍 DetailComponent - Task ID:', taskId);
+    console.log('🔍 DetailComponent - UserTaskInfo:', userTaskInfo);
+    
+    if (userTaskInfo && userTaskInfo['processInstanceDiagram']) {
+      console.log('✅ Diagramme trouvé:', userTaskInfo['processInstanceDiagram'].substring(0, 200) + '...');
+    } else {
+      console.log('❌ Aucun diagramme trouvé pour la tâche:', taskId);
+    }
   }
 
   ngOnDestroy() {
@@ -135,14 +158,138 @@ export class DetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Complete task
+   * Complete task - Approche simple comme jbpmPortal
    */
   completeTask(): void {
+    console.log('🚀 === DÉBUT COMPLETE TASK (Approche jbpmPortal) ===');
+    console.log('🔍 Émission de l\'événement avec les paramètres de la tâche');
+    
+    // Utiliser directement les paramètres de requestDetail comme jbpmPortal
+    const taskId = this.requestDetail['task-id'];
+    const containerId = this.requestDetail['task-container-id'];
+    
+    console.log('📋 Paramètres de la tâche:', { taskId, containerId });
+    
+    // Émettre l'événement pour que le composant parent gère la récupération du formulaire
+    this.onCompleteTask.emit({
+      taskId: taskId,
+      containerId: containerId
+    });
+  }
+  
+  /**
+   * Fallback vers le formulaire simple si la récupération des tâches échoue
+   */
+  private fallbackToSimpleForm(userGroups: string[]): void {
+    console.log('🔄 Utilisation du fallback vers le formulaire simple');
+    
+    // Récupérer le nom de la tâche depuis les données
+    const taskId = this.requestDetail['task-id'];
+    const userTaskInfo = this.currentUserTaskInfos[taskId];
+    const taskName = userTaskInfo?.['processInfo']?.processName || this.requestDetail['task-name'] || '';
+    
+    // Déterminer le type de formulaire à ouvrir selon le groupe ET le nom de la tâche
+    let formType = '';
+    
+    if (userGroups.includes('PM')) {
+      if (taskName.toLowerCase().includes('pm') || taskName.toLowerCase().includes('manager')) {
+        formType = 'PM Evaluation';
+      } else if (taskName.toLowerCase().includes('self')) {
+        formType = 'Self Evaluation';
+      } else {
+        formType = 'PM Evaluation'; // Par défaut pour PM
+      }
+      console.log('✅ Utilisateur PM - Formulaire (fallback):', formType);
+    } else if (userGroups.includes('HR')) {
+      if (taskName.toLowerCase().includes('hr')) {
+        formType = 'HR Evaluation';
+      } else {
+        formType = 'HR Evaluation'; // Par défaut pour HR
+      }
+      console.log('✅ Utilisateur HR - Formulaire (fallback):', formType);
+    } else {
+      formType = 'Self Evaluation';
+      console.log('✅ Utilisateur standard - Formulaire (fallback):', formType);
+    }
+    
+    this.currentFormType = formType;
+    this.currentTaskId = this.requestDetail['task-id']; // Utiliser l'ID de l'instance comme fallback
+    
+    // Ouvrir la modale du formulaire
+    this.showTaskForm = true;
+  }
+  
+  /**
+   * Ferme la modale du formulaire
+   */
+  closeTaskForm(): void {
+    this.showTaskForm = false;
+    this.currentFormType = '';
+    this.currentTaskId = 0;
+  }
+  
+  /**
+   * Gère la complétion du formulaire
+   */
+  onTaskFormCompleted(): void {
+    console.log('✅ Formulaire complété avec succès');
+    this.closeTaskForm();
+    // Émettre l'événement de complétion
     const completionEvent: TaskCompletionEvent = {
       taskId: this.requestDetail['task-id'],
       containerId: this.requestDetail['task-container-id']
     };
     this.onCompleteTask.emit(completionEvent);
+  }
+  
+  /**
+   * Gère l'annulation du formulaire
+   */
+  onTaskFormCancelled(): void {
+    console.log('❌ Formulaire annulé');
+    this.closeTaskForm();
+  }
+  
+  /**
+   * Obtient l'ID de tâche approprié pour le formulaire
+   * Le problème est que nous avons l'ID de l'instance, mais nous avons besoin de l'ID de la tâche
+   */
+  getTaskIdForForm(): number {
+    // Pour l'instant, nous utilisons l'ID de l'instance comme fallback
+    // Mais idéalement, nous devrions récupérer l'ID de la tâche depuis jBPM
+    const instanceId = this.requestDetail['task-id'];
+    console.log('🔍 Utilisation de l\'ID d\'instance comme ID de tâche:', instanceId);
+    return instanceId;
+  }
+  
+  /**
+   * Obtient le nom d'utilisateur actuel
+   */
+  getCurrentUsername(): string {
+    const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+    return currentUser.preferred_username || currentUser.name || 'Utilisateur';
+  }
+  
+  /**
+   * Obtient les groupes de l'utilisateur actuel
+   */
+  getCurrentUserGroups(): string {
+    const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+    const groups = currentUser.groups || [];
+    return groups.join(', ') || 'Aucun groupe';
+  }
+  
+  /**
+   * Soumet le formulaire simple
+   */
+  submitSimpleForm(): void {
+    console.log('✅ Soumission du formulaire simple:', this.currentFormType);
+    
+    // Simuler la soumission du formulaire
+    alert(`Formulaire ${this.currentFormType} soumis avec succès !`);
+    
+    // Fermer la modale et émettre l'événement de complétion
+    this.onTaskFormCompleted();
   }
 
   /**

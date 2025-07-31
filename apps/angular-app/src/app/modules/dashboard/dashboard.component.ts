@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { ProcessInstanceService } from '../../shared/services/process-instance.service';
 import { ContainerService } from '../../shared/services/container.service';
 import { TaskService } from '../../shared/services/task.service';
-import { ProcessInstanceType } from '@domain/types/process-instance';
+import { ProcessInstanceType } from '@jbpm/domain';
 import { MatDialog } from '@angular/material/dialog';
 import { NewRequestComponent } from '../jbpm-dashboard/new-request/new-request.component';
 import { Subject, takeUntil } from 'rxjs';
@@ -61,7 +61,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   
   // Modal state
   selectedInstanceDetails: ProcessInstanceWithTaux | null = null;
-  showDetailsModal = false;
   
   // Indicators
   indicators: DashboardIndicators = {
@@ -382,38 +381,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return d.toLocaleDateString('fr-FR');
   }
 
-  /**
-   * View process instance details using the new service
-   */
-  async consulterInstance(process: any): Promise<void> {
-    try {
-      this.isLoadingDetails = true;
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
-      
-      // Use the new method that includes completion rate
-      const details = await this.processInstanceService.getProcessInstanceWithCompletionRate(
-        process['container-id'],
-        process['process-instance-id'],
-        defaultHeader
-      );
-      
-      this.selectedInstanceDetails = details;
-      this.showDetailsModal = true;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des détails de l\'instance:', error);
-      alert('Erreur lors de la récupération des détails de l\'instance');
-    } finally {
-      this.isLoadingDetails = false;
-    }
-  }
 
-  /**
-   * Close details modal
-   */
-  fermerDetailsModal(): void {
-    this.showDetailsModal = false;
-    this.selectedInstanceDetails = null;
-  }
+
+
 
   /**
    * Calculate dashboard indicators

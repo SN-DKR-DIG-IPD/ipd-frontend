@@ -371,7 +371,7 @@ restart_alt
 <div *ngIf="selectedRequest">
   <app-detail [requestDetail]="selectedRequest" [currentUserTaskInfos]="currentUserTaskInfos" [closeModal]="closeDetailModal" (modalShowChange)="setCloseDetailModal($event)" (onCompleteTask)="completeTask($event)"></app-detail>
 </div>
-<app-modif [form]="taskForm" [closeModal]="closeModifModal" (modalShowChange)="setCloseModifModal($event)"></app-modif>
+<app-modif [form]="taskForm" [closeModal]="closeModifModal" [taskInfo]="currentTaskInfo" (modalShowChange)="setCloseModifModal($event)"></app-modif>
 <div *ngIf="selectedDemande">
   <div class="fixed inset-0 bg-gray-800 bg-opacity-50 z-40"></div>
 

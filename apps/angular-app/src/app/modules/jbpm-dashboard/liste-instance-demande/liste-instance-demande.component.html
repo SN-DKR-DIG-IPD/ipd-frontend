@@ -45,10 +45,10 @@
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date début</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date fin</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approbateur</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle approbateur</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tâche actuelle</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigné à</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taux de complétude</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>          
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
@@ -62,22 +62,32 @@
               {{ row.statut || 'Non renseigné' }}
             </span>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.variables?.approbateur || 'Non renseigné' }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.variables?.roleApprobateur || 'Non renseigné' }}</td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <div class="w-24 bg-gray-200 rounded h-4 relative">
-              <div class="h-4 rounded bg-green-500" [style.width]="(row.taux || 0) + '%'" role="progressbar"></div>
-              <span class="absolute inset-0 text-xs flex items-center justify-center font-bold text-green-900">
-                {{ row.taux !== undefined ? (row.taux + '%') : '0%' }}
-              </span>
-            </div>
+            <span [class]="getCurrentTaskBadgeClass(row.currentTask)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
+              {{ row.currentTask || 'En cours...' }}
+            </span>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm">
-            <button class="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              Consulter
-            </button>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span [class]="getAssignedToBadgeClass(row.assignedTo)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
+              {{ row.assignedTo || 'Non assigné' }}
+            </span>
           </td>
+                     <td class="px-6 py-4 whitespace-nowrap">
+             <div class="w-24 bg-gray-200 rounded h-4 relative">
+               <div class="h-4 rounded bg-green-500" [style.width]="(row.taux || 0) + '%'" role="progressbar"></div>
+               <span class="absolute inset-0 text-xs flex items-center justify-center font-bold text-green-900">
+                 {{ row.taux !== undefined ? (row.taux + '%') : '0%' }}
+               </span>
+             </div>
+           </td>
+           <td class="px-6 py-4 whitespace-nowrap text-sm">
+             <button 
+               (click)="openDetailModal(row)"
+               class="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+               Consulter
+             </button>
+           </td>          
         </tr>
       </tbody>
     </table>
@@ -90,4 +100,24 @@
     <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune demande</h3>
     <p class="mt-1 text-sm text-gray-500">Aucune demande n'a été créée pour le moment.</p>
   </div>
+
+  <!-- Detail Modal -->
+  <app-detail 
+    *ngIf="showDetailModal"
+    [requestDetail]="selectedTaskDetail" 
+    [currentUserTaskInfos]="selectedUserTaskInfos" 
+    [closeModal]="!showDetailModal" 
+    (modalShowChange)="closeDetailModal()" 
+    (onCompleteTask)="completeTask($event)">
+  </app-detail>
+  
+  <!-- Task Form Modal (approche jbpmPortal) -->
+  <app-modif 
+    *ngIf="showTaskFormModal && selectedTaskForm"
+    [form]="selectedTaskForm" 
+    [closeModal]="!showTaskFormModal" 
+    [taskInfo]="selectedTaskInfo"
+    (modalShowChange)="showTaskFormModal = false"
+    (onCompleteTask)="onCompleteTask($event)">
+  </app-modif>
 </div> 

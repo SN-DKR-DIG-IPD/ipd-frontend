@@ -1,456 +1,471 @@
-import { Component, EventEmitter, Input, Output, OnInit, ViewChild, ElementRef, HostListener, OnChanges, SimpleChanges, OnDestroy, Renderer2 } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, ViewChild, ElementRef, OnChanges, SimpleChanges, Renderer2, AfterViewInit } from '@angular/core';
 import { ScriptService } from '../../../shared/services/script-service';
-import { DocumentInstancesType, DocumentInstanceType, TasKStatus } from '@jbpm/domain';
-import { saveAs } from 'file-saver';
-import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
-import { DocumentAPI } from '../../../injections';
-import { IDocumentAPI } from '@jbpm/domain';
-import { Inject } from '@angular/core';
-import { TaskService } from '../../../shared/services/task.service';
-import { Subject, takeUntil } from 'rxjs';
-
-// Interface pour les détails de la tâche
-interface TaskDetail {
-  'task-id': number;
-  'task-name': string;
-  'task-subject': string;
-  'task-description': string;
-  'task-status': string;
-  'task-priority': number;
-  'task-is-skipable': boolean;
-  'task-actual-owner': string;
-  'task-created-by': string | undefined;
-  'task-created-on': { 'java.util.Date': number };
-  'task-activation-time': { 'java.util.Date': number };
-  'task-expiration-time': { 'java.util.Date': number } | undefined;
-  'task-proc-inst-id': number;
-  'task-proc-def-id': string;
-  'task-container-id': string;
-  'task-parent-id': number;
-  'correlation-key': string;
-  'process-type': number;
-}
-
-// Interface pour les informations utilisateur
-interface UserTaskInfo {
-  [key: string]: { [key: string]: any };
-}
-
-// Interface pour l'événement de complétion
-interface TaskCompletionEvent {
-  taskId: number;
-  containerId: string;
-}
+import { TasKStatus } from '@jbpm/domain';
 
 @Component({
   selector: 'app-modif',
   templateUrl: './modif.component.html',
   styleUrl: './modif.component.scss'
 })
-export class ModifComponent implements OnInit, OnChanges, OnDestroy {
+export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
   @ViewChild('modalForm') modalForm: ElementRef | undefined;
   
   @Input() form = '';
-  @Input() taskStatus = TasKStatus.Unknow;
-  @Input() requestDetail: TaskDetail = {
-    'task-id': -2,
-    'task-name': '',
-    'task-subject': '',
-    'task-description': '',
-    'task-status': 'Unknown',
-    'task-priority': -2,
-    'task-is-skipable': false,
-    'task-actual-owner': '',
-    'task-created-by': undefined,
-    'task-created-on': { 'java.util.Date': Date.now() },
-    'task-activation-time': { 'java.util.Date': Date.now() },
-    'task-expiration-time': undefined,
-    'task-proc-inst-id': -2,
-    'task-proc-def-id': '',
-    'task-container-id': '',
-    'task-parent-id': -2,
-    'correlation-key': '',
-    'process-type': -2
-  };
-  @Input() currentUserTaskInfos: UserTaskInfo = {};
-  @Output() modalShowChange = new EventEmitter<boolean>();
-  @Output() onCompleteTask = new EventEmitter<TaskCompletionEvent>();
   @Input() closeModal = true;
-
-  // Constants
-  TaskStatus = TasKStatus;
-  
-  // Script resources
-  private scriptResources = [
-    'http://localhost:8080/kie-server/services/rest/server/files/patternfly/js/jquery.min.js',
-    'http://localhost:8080/kie-server/services/rest/server/files/patternfly/js/patternfly.min.js',
-    'http://localhost:8080/kie-server/services/rest/server/files/bootstrap/js/bootstrap-slider.js',
-    'http://localhost:8080/kie-server/services/rest/server/files/bootstrap/js/bootstrap-tagsinput.js',
-    'http://localhost:8080/kie-server/services/rest/server/files/js/forms.js',
-    'http://localhost:8080/kie-server/services/rest/server/files/js/kieserver-ui.js'
-  ];
-
-  // UI state
-  priority = '';
-  scale = 1;
-  isMaximized = false;
-  isDocumentsExpanded = true;
-  isDetailsExpanded = true;
-  isHistoryExpanded = true;
-
-  // Loading states
-  isLoading = false;
-  isLoadingDocument = false;
-
-  // Destroy subject for cleanup
-  private destroy$ = new Subject<void>();
-
-  // Default header
-  private defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
+  @Input() taskInfo: { containerId: string; taskId: number } | null = null;
+  @Output() modalShowChange = new EventEmitter<boolean>();
+  @Output() onCompleteTask = new EventEmitter();
 
   constructor(
-    @Inject(DocumentAPI) public documentAPI: IDocumentAPI,
-    private scriptService: ScriptService,
-    private safeHtml: SafeHtmlPipe,
-    private taskService: TaskService,
-    private renderer: Renderer2
+    private renderer: Renderer2,
+    private scriptService: ScriptService
   ) {}
 
   ngOnInit() {
-    this.priority = this.getPriority(this.requestDetail['task-priority']);
+    // Écoute l'événement de complétion de tâche
+    window.addEventListener('taskCompleted', (event: any) => {
+      console.log('Tâche complétée, fermeture de la modale');
+      this.onclose();
+    });
   }
 
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-  
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['form']) {
+    if (changes['form'] && this.form) {
+      console.log('🔍 ModifComponent: Formulaire reçu:', this.form.substring(0, 200) + '...');
+      console.log('🔍 ModifComponent: taskInfo:', this.taskInfo);
+      // Attendre que le DOM soit rendu avant de charger le formulaire
+      setTimeout(() => {
+        this.loadForm();
+      }, 100);
+    }
+  }
+
+  ngAfterViewInit(): void {
+    // Si le formulaire est déjà disponible, le charger après l'initialisation de la vue
+    if (this.form && this.modalForm) {
+      console.log('🔍 ModifComponent: ngAfterViewInit - Chargement du formulaire');
       this.loadForm();
     }
   }
 
   /**
-   * Load form content
+   * Charge le formulaire HTML et injecte les fonctions jBPM
    */
   loadForm(): void {
-    const modalFormNode = this.modalForm?.nativeElement as HTMLElement;
-    if (!modalFormNode) return;
+    console.log('🔍 ModifComponent: Début de loadForm()');
+    
+    // Vérifier que l'élément DOM est disponible
+    if (!this.modalForm) {
+      console.error('❌ ModifComponent: modalForm ViewChild n\'est pas disponible');
+      // Réessayer après un délai
+      setTimeout(() => {
+        this.loadForm();
+      }, 200);
+      return;
+    }
+    
+    const modalFormNode = this.modalForm.nativeElement as HTMLElement;
+    if (!modalFormNode) {
+      console.error('❌ ModifComponent: modalFormNode est null');
+      return;
+    }
 
-    // Clear existing content
+    console.log('🔍 ModifComponent: modalFormNode trouvé:', modalFormNode);
+    console.log('🔍 ModifComponent: modalFormNode.innerHTML avant injection:', modalFormNode.innerHTML);
+
+    // Nettoie le contenu existant
     while (modalFormNode.firstChild) {
       modalFormNode.removeChild(modalFormNode.lastChild!);
     }
 
-    // Patch du HTML pour remplacer toutes les URLs absolues par /jbpm/api
-    let safeFormHtml = this.form;
-    // Supprime toutes les balises <iframe> (empêche l'injection d'iframe)
-    safeFormHtml = safeFormHtml.replace(/<iframe[\s\S]*?<\/iframe>/gi, function(match) {
-      console.warn('Iframe supprimée du formulaire jBPM:', match);
-      return '';
-    });
-    // Remplace dans src, href, action, data-src, etc. (attributs HTML)
-    safeFormHtml = safeFormHtml.replace(/(src|href|action|data-src)=(['"])https?:\/\/(jbpm\.localhost|localhost):8082/gi, '$1=$2/jbpm/api');
-    // Remplace aussi les URLs brutes dans le HTML
-    safeFormHtml = safeFormHtml.replace(/https?:\/\/(jbpm\.localhost|localhost):8082/gi, '/jbpm/api');
+    // Corrige les URLs dans le HTML du formulaire
+    let correctedForm = this.form;
+    correctedForm = correctedForm.replace(/https?:\/\/localhost:8080\/kie-server/g, '/jbpm/api');
+    correctedForm = correctedForm.replace(/http:\/\/localhost:8080\/kie-server/g, '/jbpm/api');
+    correctedForm = correctedForm.replace(/(src|href|action)=(['"])https?:\/\/localhost:8080\/kie-server/g, '$1=$2/jbpm/api');
+    correctedForm = correctedForm.replace(/(src|href|action)=(['"])http:\/\/localhost:8080\/kie-server/g, '$1=$2/jbpm/api');
 
-    // Injecte le HTML patché
-    modalFormNode.insertAdjacentHTML('beforeend', safeFormHtml);
-    this.loadFormScript(modalFormNode);
+    console.log('🔍 ModifComponent: HTML corrigé:', correctedForm.substring(0, 300) + '...');
+
+    // Injecte le HTML corrigé
+    modalFormNode.insertAdjacentHTML('beforeend', correctedForm);
+
+    console.log('🔍 ModifComponent: HTML injecté, contenu du modalFormNode:', modalFormNode.innerHTML.substring(0, 300) + '...');
+    console.log('🔍 ModifComponent: Longueur du contenu injecté:', modalFormNode.innerHTML.length);
+
+    // Injecte immédiatement les fonctions jBPM
+    this.injectJbpmFunctions();
   }
 
   /**
-   * Load form scripts sequentially
+   * Injecte les fonctions jBPM manquantes
    */
-  private loadFormScript(modalFormNode: HTMLElement): void {
-    const dynamicScriptResources: HTMLScriptElement[] = Array.from(modalFormNode.children)
-      .filter(child => child instanceof HTMLScriptElement) as HTMLScriptElement[];
-
-    this.loadScriptsSequentially(this.scriptResources, () => {
-      // Load dynamic scripts
-      dynamicScriptResources.forEach((resource: HTMLScriptElement) => {
-        const scriptElement = this.scriptService.loadJsScript(this.renderer, resource.src, true);
-               scriptElement!.onload = () => {
-          console.log('Dynamic script loaded:', resource.src);
-        };
-          scriptElement!.onerror = (e) => {
-          console.error('Error loading dynamic script:', e);
-        };
-      });
-
-      // Load AJAX interceptor after a delay
-          setTimeout(() => {
-        const ajaxInterceptorScript = this.scriptService.loadJsScript(
-          this.renderer,
-          this.addAjaxAuthorisationHeaderInterceptorScript()
-        );
-            ajaxInterceptorScript!.onload = () => {
-          console.log('AJAX interceptor loaded');
-        };
-      }, 2000);
-    });
-  }
-
-  /**
-   * Load scripts sequentially
-   */
-  private loadScriptsSequentially(scripts: string[], callback: () => void): void {
-    if (scripts.length === 0) {
-      callback();
+  private injectJbpmFunctions(): void {
+    const taskInfo = this.taskInfo;
+    
+    console.log('🔍 ModifComponent - taskInfo:', taskInfo);
+    
+    if (!taskInfo) {
+      console.error('taskInfo est null, impossible d\'injecter les fonctions jBPM');
+      return;
+    }
+    
+    if (!taskInfo.containerId || !taskInfo.taskId) {
+      console.error('taskInfo incomplet:', { containerId: taskInfo.containerId, taskId: taskInfo.taskId });
       return;
     }
 
-    const script = scripts.shift()!;
-    const scriptElement = this.scriptService.loadJsScript(this.renderer, script);
-    scriptElement!.onload = () => {
-      this.loadScriptsSequentially(scripts, callback);
-    };
-    scriptElement!.onerror = () => {
-      console.warn('Failed to load script:', script);
-      this.loadScriptsSequentially(scripts, callback);
-    };
-  }
-
-  /**
-   * Get document details
-   */
-  async getDocumentDetail(documentName: string): Promise<DocumentInstanceType | null> {
-    try {
-      this.isLoadingDocument = true;
-      let currentPage = 0;
-      const numberOfDoc = 10;
-      const paginationLimit = 5;
-
-      while (currentPage < paginationLimit) {
-        const documents: DocumentInstancesType = await this.documentAPI.listAllDocuments(
-          currentPage, 
-          numberOfDoc, 
-          this.defaultHeader
-        );
-        
-        const doc = documents['document-instances'].find(doc => 
-          doc['document-name'] === documentName
-        );
-        
-        if (doc) {
-          return doc;
+    // Utiliser l'approche alternative directement pour éviter les erreurs de syntaxe
+    console.log('🔧 Utilisation de l\'approche alternative pour éviter les erreurs de syntaxe');
+    this.injectJbpmFunctionsAlternative();
+    
+    // Ajoute le CSS pour les animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
         }
-        currentPage++;
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
       }
-      return null;
-    } catch (error) {
-      console.error('Error getting document detail:', error);
-      return null;
-    } finally {
-      this.isLoadingDocument = false;
-    }
+      
+      /* Styles pour le formulaire jBPM */
+      #modalForm input[type="text"], 
+      #modalForm input[type="email"], 
+      #modalForm input[type="password"],
+      #modalForm textarea,
+      #modalForm select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
+        color: #374151;
+      }
+      
+      #modalForm input[type="text"]:focus, 
+      #modalForm input[type="email"]:focus, 
+      #modalForm input[type="password"]:focus,
+      #modalForm textarea:focus,
+      #modalForm select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      
+      #modalForm label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+      }
+      
+      #modalForm .form-group {
+        margin-bottom: 20px;
+      }
+      
+      #modalForm button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+      
+      #modalForm button[onclick*="claimTask"] {
+        background-color: #3b82f6;
+        color: white;
+      }
+      
+      #modalForm button[onclick*="claimTask"]:hover {
+        background-color: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+      
+      #modalForm button[onclick*="startTask"] {
+        background-color: #10b981;
+        color: white;
+      }
+      
+      #modalForm button[onclick*="startTask"]:hover {
+        background-color: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+      
+      #modalForm button[onclick*="completeTask"] {
+        background-color: #f59e0b;
+        color: white;
+      }
+      
+      #modalForm button[onclick*="completeTask"]:hover {
+        background-color: #d97706;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      }
+      
+      #modalForm button[onclick*="saveTask"] {
+        background-color: #6b7280;
+        color: white;
+      }
+      
+      #modalForm button[onclick*="saveTask"]:hover {
+        background-color: #4b5563;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+      }
+      
+      #modalForm button[onclick*="releaseTask"] {
+        background-color: #ef4444;
+        color: white;
+      }
+      
+      #modalForm button[onclick*="releaseTask"]:hover {
+        background-color: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      }
+      
+      #modalForm button[onclick*="stopTask"] {
+        background-color: #8b5cf6;
+        color: white;
+      }
+      
+      #modalForm button[onclick*="stopTask"]:hover {
+        background-color: #7c3aed;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+      }
+      
+      /* Styles pour les sections du formulaire */
+      #modalForm .form-section {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      
+      #modalForm .form-section h3 {
+        margin-top: 0;
+        margin-bottom: 16px;
+        color: #1f2937;
+        font-size: 16px;
+        font-weight: 600;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 8px;
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        #modalForm button {
+          width: 100%;
+          margin-right: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+
   }
 
   /**
-   * Close modal
+   * Méthode alternative d'injection des fonctions jBPM
+   */
+  private injectJbpmFunctionsAlternative(): void {
+    const taskInfo = this.taskInfo;
+    
+    if (!taskInfo) {
+      console.error('taskInfo est null, impossible d\'injecter les fonctions jBPM');
+      return;
+    }
+
+    // Fonction pour faire des requêtes authentifiées
+    const makeRequest = (url: string, method: string, data?: any) => {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, url, true);
+        
+        // Récupère le token depuis sessionStorage
+        const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader') || '{}');
+        if (defaultHeader.Authorization) {
+          xhr.setRequestHeader('Authorization', defaultHeader.Authorization);
+        }
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Accept', 'application/json');
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(xhr.responseText);
+            } else {
+              reject(new Error('HTTP ' + xhr.status + ': ' + xhr.statusText));
+            }
+          }
+        };
+        
+        xhr.onerror = function() {
+          reject(new Error('Erreur réseau'));
+        };
+        
+        if (data) {
+          xhr.send(JSON.stringify(data));
+        } else {
+          xhr.send();
+        }
+      });
+    };
+
+    // Fonction pour récupérer les données du formulaire
+    const getFormData = () => {
+      const formData: any = {};
+      const inputs = document.querySelectorAll('input, select, textarea');
+      
+      inputs.forEach((input: any) => {
+        if (input.name && input.value !== undefined) {
+          formData[input.name] = input.value;
+        }
+      });
+      
+      return formData;
+    };
+
+    // Fonction pour afficher une notification
+    const showNotification = (message: string, type: string = 'info') => {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+      `;
+      
+      if (type === 'success') {
+        notification.style.backgroundColor = '#10B981';
+      } else if (type === 'error') {
+        notification.style.backgroundColor = '#EF4444';
+      } else {
+        notification.style.backgroundColor = '#3B82F6';
+      }
+      
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 3000);
+    };
+
+    // Définit les fonctions globales
+    (window as any).claimTask = () => {
+      const url = `/jbpm/api/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/claimed`;
+      
+      makeRequest(url, 'PUT')
+        .then(() => {
+          showNotification('Tâche réclamée avec succès !', 'success');
+        })
+        .catch((error: any) => {
+          showNotification('Erreur lors de la réclamation: ' + error.message, 'error');
+        });
+    };
+
+    (window as any).releaseTask = () => {
+      const url = `/jbpm/api/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/released`;
+      
+      makeRequest(url, 'PUT')
+        .then(() => {
+          showNotification('Tâche libérée avec succès !', 'success');
+        })
+        .catch((error: any) => {
+          showNotification('Erreur lors de la libération: ' + error.message, 'error');
+        });
+    };
+
+    (window as any).startTask = () => {
+      const url = `/jbpm/api/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/started`;
+      
+      makeRequest(url, 'PUT')
+        .then(() => {
+          showNotification('Tâche démarrée avec succès !', 'success');
+        })
+        .catch((error: any) => {
+          showNotification('Erreur lors du démarrage: ' + error.message, 'error');
+        });
+    };
+
+    (window as any).stopTask = () => {
+      const url = `/jbpm/api/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/stopped`;
+      
+      makeRequest(url, 'PUT')
+        .then(() => {
+          showNotification('Tâche arrêtée avec succès !', 'success');
+        })
+        .catch((error: any) => {
+          showNotification('Erreur lors de l\'arrêt: ' + error.message, 'error');
+        });
+    };
+
+    (window as any).saveTask = () => {
+      const formData = getFormData();
+      const url = `/jbpm/api/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/contents/output`;
+      
+      makeRequest(url, 'PUT', formData)
+        .then(() => {
+          showNotification('Formulaire sauvegardé avec succès !', 'success');
+        })
+        .catch((error: any) => {
+          showNotification('Erreur lors de la sauvegarde: ' + error.message, 'error');
+        });
+    };
+
+    (window as any).completeTask = () => {
+      const formData = getFormData();
+      const url = `/jbpm/api/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/completed`;
+      
+      makeRequest(url, 'PUT', formData)
+        .then(() => {
+          showNotification('Tâche complétée avec succès !', 'success');
+          setTimeout(() => {
+            const event = new CustomEvent('taskCompleted', { detail: taskInfo });
+            window.dispatchEvent(event);
+          }, 1000);
+        })
+        .catch((error: any) => {
+          showNotification('Erreur lors de la complétion: ' + error.message, 'error');
+        });
+    };
+
+    console.log('Fonctions jBPM injectées avec succès dans window global (approche alternative)');
+  }
+
+  /**
+   * Ferme la modale
    */
   onclose(): void {
     this.closeModal = true;
     this.modalShowChange.emit(this.closeModal);
   }
 
-  /**
-   * Handle close modal event
-   */
-  setCloseModal(event: Event): void {
-    event.preventDefault();
-    this.onclose();
-  }
 
-  /**
-   * Handle click events for document downloads
-   */
-  @HostListener('click', ['$event.target']) 
-  async onClick(element: any): Promise<void> {
-    if (!element || !element.innerText) return;
-
-    const fileExtensions = ['txt', 'pdf', 'docx', 'jpeg', 'jpg', 'png'];
-    const fileName = element.innerText;
-    const fileExtension = fileName.split('.').pop()?.toLowerCase();
-
-    if (fileExtensions.includes(fileExtension)) {
-      await this.downloadDocument(fileName, element);
-    }
-  }
-
-  /**
-   * Download document
-   */
-  private async downloadDocument(fileName: string, element: any): Promise<void> {
-    try {
-      this.isLoadingDocument = true;
-      
-      const doc = await this.getDocumentDetail(fileName);
-      if (!doc) {
-        console.error('Document not found:', fileName);
-        return;
-      }
-
-      const streamHeader = {
-        ...this.defaultHeader,
-        'Content-Type': 'application/octet-stream',
-        'Accept': 'application/octet-stream'
-      };
-
-      const docContent = await this.documentAPI.displayDocumentContentById(
-        doc['document-id'], 
-        streamHeader
-      );
-
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([docContent], { type: 'application/octet-stream' }));
-      const link = document.createElement('a');
-      document.body.appendChild(link);
-      link.setAttribute('style', 'display: none');
-      link.href = url;
-      link.download = fileName;
-      link.click();
-        window.URL.revokeObjectURL(url);
-      link.remove();
-    } catch (error) {
-      console.error('Error downloading document:', error);
-    } finally {
-      this.isLoadingDocument = false;
-    }
-  }
-
-  /**
-   * Parse XML string
-   */
-  parseXml(xmlStr: string): Document | null {
-    if (window.DOMParser) {
-      return new window.DOMParser().parseFromString(xmlStr, 'text/xml');
-    }
-    return null;
-  }
-
-  /**
-   * Set scale
-   */
-  setScale(scale: number): void {
-    this.scale = scale;
-  }
-
-  /**
-   * Set maximized state
-   */
-  setMaximized(maximized: boolean): void {
-    this.isMaximized = maximized;
-  }
-
-  /**
-   * Complete task
-   */
-  completeTask(): void {
-    const completionEvent: TaskCompletionEvent = {
-      taskId: this.requestDetail['task-id'],
-      containerId: this.requestDetail['task-container-id']
-    };
-    this.onCompleteTask.emit(completionEvent);
-  }
-
-  /**
-   * Get priority string from number
-   */
-  getPriority(priority: number): string {
-    const priorities = ['LOW', 'MEDIUM', 'HIGH'];
-    return priorities[priority] || priorities[0];
-  }
-
-  /**
-   * Add AJAX authorization header interceptor script
-   */
-  private addAjaxAuthorisationHeaderInterceptorScript(): string {
-    return `
-      (function() {
-        const originalOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-          this.addEventListener('readystatechange', function() {
-            if (this.readyState === 1) {
-              this.setRequestHeader('Authorization', '${this.defaultHeader.Authorization}');
-            }
-          });
-          return originalOpen.call(this, method, url, async, user, password);
-        };
-      })();
-    `;
-  }
-
-  /**
-   * Format date for display
-   */
-  formatDate(dateObj: { 'java.util.Date': number } | undefined): string {
-    if (!dateObj || !dateObj['java.util.Date']) {
-      return '-';
-    }
-    const date = new Date(dateObj['java.util.Date']);
-    return date.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
-  /**
-   * Get task status class for styling
-   */
-  getTaskStatusClass(status: string): string {
-    switch (status.toLowerCase()) {
-      case 'completed':
-      case 'terminé':
-        return 'bg-green-100 text-green-800';
-      case 'in_progress':
-      case 'en cours':
-        return 'bg-blue-100 text-blue-800';
-      case 'ready':
-      case 'prêt':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'reserved':
-      case 'réservé':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  }
-
-  /**
-   * Get priority class for styling
-   */
-  getPriorityClass(priority: string): string {
-    switch (priority) {
-      case 'HIGH':
-        return 'bg-red-100 text-red-800';
-      case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'LOW':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  }
-
-  /**
-   * Check if task is completed
-   */
-  isTaskCompleted(): boolean {
-    const status = this.requestDetail['task-status'].toLowerCase();
-    return status === 'completed' || status === 'terminé';
-  }
-
-  /**
-   * Check if task can be completed
-   */
-  canCompleteTask(): boolean {
-    return !this.isTaskCompleted() && this.requestDetail['task-id'] > 0;
-  }
 }
 
 

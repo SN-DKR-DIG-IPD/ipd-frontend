@@ -61,6 +61,7 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
     closeDetailModal = true;
     closeModifModal = true;
     taskForm : any = null
+    currentTaskInfo: { containerId: string; taskId: number } | null = null;
     processes: ProcessType[] = []
     createdProcessId = -2
 
@@ -658,6 +659,7 @@ activeFilter: string | null = null;
         'Accept': 'text/html'
       })
     this.taskForm = await this.formAPI.getTaskInstanceForm(containerId, taskId, htmlHeader)
+    this.currentTaskInfo = { containerId, taskId };
     this.setCloseDetailModal(true)
     this.closeModifModal = false
   }

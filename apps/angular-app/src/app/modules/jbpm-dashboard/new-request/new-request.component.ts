@@ -5,6 +5,8 @@ import { ProcessInstanceService } from '../../../shared/services/process-instanc
 import { ContainerService } from '../../../shared/services/container.service';
 import { Subject, takeUntil } from 'rxjs';
 import { TaskService } from '../../../shared/services/task.service';
+import { FormAPI } from '../../../injections';
+import { IFormAPI } from '@jbpm/domain';
 
 // Interface pour les données du formulaire
 interface FormData {
@@ -73,6 +75,8 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
   processInstanceId: number | null = null;
   userTaskId: number | null = null;
   userTaskContainerId: string | null = null;
+  taskForm: string = '';
+  closeModifModal: boolean = true;
   // Supprimer la propriété userTaskFormHtml et toute logique liée à getTaskFormHtml
   // Préparer les propriétés nécessaires pour passer containerId et taskId au composant dynamique
 
@@ -84,7 +88,8 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
     private dialogRef: MatDialogRef<NewRequestComponent>,
     private processInstanceService: ProcessInstanceService,
     private containerService: ContainerService,
-    private taskService: TaskService
+    private taskService: TaskService,
+    @Inject(FormAPI) private formAPI: IFormAPI
   ) {}
 
   ngOnInit() {
@@ -195,15 +200,32 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
       }
       this.userTaskId = firstUserTask['task-id'];
       this.userTaskContainerId = firstUserTask['task-container-id'] || this.selectedContainerId;
-      // Log de debug pour l'URL du formulaire dynamique
-      console.log('DEBUG getTaskFormHtml URL:', `${this.userTaskContainerId}, ${this.userTaskId}`);
-      // Récupérer le formulaire HTML dynamique
-      // this.userTaskFormHtml = await this.taskService.getTaskFormHtml(this.userTaskContainerId!, this.userTaskId, defaultHeader);
-      // if (!this.userTaskFormHtml) {
-      //   this.errorMsg = 'Aucun formulaire dynamique trouvé pour cette tâche. Vérifiez la configuration du process BPMN.';
-      //   this.isLoading = false;
-      //   return;
-      // }
+      
+      // Récupérer le formulaire HTML pour ModifComponent
+      const htmlHeader = Object.assign({}, defaultHeader, {
+        'Content-Type': 'text/xml;charset=UTF-8',
+        'Accept': 'text/html'
+      });
+      
+      // Récupérer le formulaire HTML
+      if (this.userTaskContainerId && this.userTaskId) {
+        console.log('🔍 NewRequestComponent: Récupération du formulaire pour:', this.userTaskContainerId, this.userTaskId);
+        this.taskForm = await this.formAPI.getTaskInstanceForm(this.userTaskContainerId, this.userTaskId, htmlHeader);
+        console.log('🔍 NewRequestComponent: Formulaire récupéré:', this.taskForm ? this.taskForm.substring(0, 200) + '...' : 'null');
+      }
+      
+      if (!this.taskForm) {
+        this.errorMsg = 'Aucun formulaire trouvé pour cette tâche.';
+        this.isLoading = false;
+        return;
+      }
+      
+      console.log('✅ NewRequestComponent: Formulaire prêt, ouverture de la modale');
+      console.log('✅ NewRequestComponent: taskInfo:', { containerId: this.userTaskContainerId, taskId: this.userTaskId });
+      console.log('✅ NewRequestComponent: closeModifModal avant:', this.closeModifModal);
+      
+      this.closeModifModal = false;
+      console.log('✅ NewRequestComponent: closeModifModal après:', this.closeModifModal);
       this.step = 2;
     } catch (error: any) {
       this.errorMsg = error?.message || 'Erreur lors du démarrage du processus.';
@@ -212,42 +234,16 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Étape 2 : Soumettre le formulaire dynamique pour compléter la tâche
-   */
-  async submitUserTaskForm(): Promise<void> {
-    // this.isSubmittingTask = true; // This line is no longer needed as the form is handled by <app-task-form>
-    this.errorMsg = '';
-    try {
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
-      // Récupérer les données du formulaire dynamique (par ex. via FormData ou querySelector)
-      const form = document.getElementById('jbpm-task-form') as HTMLFormElement;
-      if (!form) {
-        this.errorMsg = 'Formulaire introuvable.';
-        // this.isSubmittingTask = false; // This line is no longer needed
-        return;
-      }
-      const formData = new FormData(form);
-      const data: any = {};
-      formData.forEach((value, key) => {
-        data[key] = value;
-      });
-      // Compléter la tâche
-      await this.taskService.completeTask(this.userTaskId!, this.userTaskContainerId!, data, defaultHeader);
-      this.dialogRef.close('created');
-    } catch (error: any) {
-      this.errorMsg = error?.message || 'Erreur lors de la soumission du formulaire.';
-    } finally {
-      // this.isSubmittingTask = false; // This line is no longer needed
-    }
-  }
+
 
   /**
-   * Appelé quand la tâche utilisateur est complétée dans <app-task-form>
+   * Appelé quand la tâche utilisateur est complétée dans <app-modif>
    */
   onTaskCompleted() {
     this.dialogRef.close('created');
   }
+
+
 
   /**
    * Close dialog

@@ -8,53 +8,53 @@
   <!-- Dashboard content -->
   <div *ngIf="!isLoadingContainers">
     <!-- Indicators Section -->
-  <div class="flex flex-row w-full divide-x divide-divideColor">
-    <div class="flex-1 p-5">
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-white">
-            <lucide-icon name="combine" class="w-4 h-4"></lucide-icon>
+    <div class="flex flex-row w-full divide-x divide-divideColor">
+      <div class="flex-1 p-5">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-white">
+              <lucide-icon name="combine" class="w-4 h-4"></lucide-icon>
+            </div>
+            <span>Total demande OM</span>
           </div>
-          <span>Total demande OM</span>
-        </div>
-        <div class="border-b border-dashed border-dashedColor pb-3">
+          <div class="border-b border-dashed border-dashedColor pb-3">
             <span class="text-2xl font-bold">{{ indicators.totalDemandesOM }}</span>
-        </div>
-        <div>
+          </div>
+          <div>
             <span class="text-xs text-updateColor">Mise à jour : {{ formatDate(currentDate) }}</span>
           </div>
         </div>
       </div>
       
-    <div class="flex-1 p-5">
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 flex items-center justify-center rounded-full bg-nationalColor text-white">
-            <lucide-icon name="globe-lock" class="w-4 h-4"></lucide-icon>
+      <div class="flex-1 p-5">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 flex items-center justify-center rounded-full bg-nationalColor text-white">
+              <lucide-icon name="globe-lock" class="w-4 h-4"></lucide-icon>
+            </div>
+            <span>OM nationale</span>
           </div>
-          <span>OM nationale</span>
-        </div>
-        <div class="border-b border-dashed border-dashedColor pb-3">
+          <div class="border-b border-dashed border-dashedColor pb-3">
             <span class="text-2xl font-bold">{{ indicators.totalOMNationale }}</span>
-        </div>
-        <div>
+          </div>
+          <div>
             <span class="text-xs text-updateColor">Mise à jour : {{ formatDate(currentDate) }}</span>
           </div>
         </div>
       </div>
       
-    <div class="flex-1 p-5">
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 flex items-center justify-center rounded-full bg-internationalColor text-white">
-            <lucide-icon name="globe" class="w-4 h-4"></lucide-icon>
+      <div class="flex-1 p-5">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 flex items-center justify-center rounded-full bg-internationalColor text-white">
+              <lucide-icon name="globe" class="w-4 h-4"></lucide-icon>
+            </div>
+            <span>OM internationale</span>
           </div>
-          <span>OM internationale</span>
-        </div>
-        <div class="border-b border-dashed border-dashedColor pb-3">
+          <div class="border-b border-dashed border-dashedColor pb-3">
             <span class="text-2xl font-bold">{{ indicators.totalOMInternationale }}</span>
-        </div>
-        <div>
+          </div>
+          <div>
             <span class="text-xs text-updateColor">Mise à jour : {{ formatDate(currentDate) }}</span>
           </div>
         </div>
@@ -81,56 +81,57 @@
       >
         + Nouvelle demande
       </button>
-  </div>
+    </div>
 
     <!-- Process List Section -->
-  <div class="flex flex-col gap-y-6 p-5">
-    <div>
-      <span class="font-bold text-lg">Liste des demandes OM</span>
-    </div>
-    <app-liste-instance-demande #listeInstanceDemande></app-liste-instance-demande>
-      
+    <div class="flex flex-col gap-y-6 p-5">
+      <div>
+        <span class="font-bold text-lg">Liste des demandes OM</span>
+      </div>
+      <app-liste-instance-demande #listeInstanceDemande>
+      </app-liste-instance-demande>
+        
       <!-- Pagination -->
-    <div class="flex flex-row mt-6 px-4 gap-4">
-      <div class="basis-1/2 flex items-center gap-4">
-        <div class="p-2">
-          <div class="flex items-center space-x-2">
+      <div class="flex flex-row mt-6 px-4 gap-4">
+        <div class="basis-1/2 flex items-center gap-4">
+          <div class="p-2">
+            <div class="flex items-center space-x-2">
               <!-- Previous Button -->
               <button 
                 class="p-2 rounded-lg border border-[#F1F2F4] hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
-                    (click)="previousPage()"
+                (click)="previousPage()"
                 [disabled]="pagination.currentPage === 1">
-              <lucide-icon name="chevron-left"></lucide-icon>
-            </button>
+                <lucide-icon name="chevron-left"></lucide-icon>
+              </button>
 
-            <!-- Pages -->
+              <!-- Pages -->
               <ng-container *ngFor="let page of pagination.pages">
                 <button 
                   class="px-3 py-1 rounded hover:bg-primary hover:text-white"
                   [ngClass]="{'bg-[#F8F8F8]': pagination.currentPage === page}"
-                      (click)="gotoPage(page)">
-                {{ page }}
-              </button>
-            </ng-container>
+                  (click)="gotoPage(page)">
+                  {{ page }}
+                </button>
+              </ng-container>
 
-            <!-- Ellipsis -->
+              <!-- Ellipsis -->
               <span *ngIf="pagination.showEllipsis" class="px-2">...</span>
 
               <!-- Last page -->
               <button 
                 *ngIf="pagination.totalPages > 1 && !pagination.pages.includes(pagination.totalPages)"
-                    class="px-3 py-1 rounded hover:bg-primary hover:text-white"
+                class="px-3 py-1 rounded hover:bg-primary hover:text-white"
                 (click)="gotoPage(pagination.totalPages)">
                 {{ pagination.totalPages }}
-            </button>
+              </button>
 
               <!-- Next Button -->
               <button 
                 class="p-2 rounded-lg border border-[#F1F2F4] hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
-                    (click)="nextPage()"
+                (click)="nextPage()"
                 [disabled]="pagination.currentPage === pagination.totalPages">
-              <lucide-icon name="chevron-right"></lucide-icon>
-            </button>
+                <lucide-icon name="chevron-right"></lucide-icon>
+              </button>
             </div>
           </div>
         </div>
@@ -148,78 +149,13 @@
               <option [value]="50">50</option>
             </select>
             <span class="text-sm text-gray-600">éléments par page</span>
-      </div>
+          </div>
 
           <div class="text-sm text-gray-600">
             Affichage de {{ pagination.startIndex }} à {{ pagination.endIndex }} 
             sur {{ pagination.totalItems }} résultats
-        </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Details Modal -->
-  <div *ngIf="showDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">Détails de l'instance de processus</h2>
-        <button 
-          class="text-gray-500 hover:text-gray-700"
-          (click)="fermerDetailsModal()">
-          <lucide-icon name="x" class="w-6 h-6"></lucide-icon>
-        </button>
-      </div>
-      
-      <div *ngIf="selectedInstanceDetails" class="space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-      <div>
-            <label class="block text-sm font-medium text-gray-700">ID de l'instance</label>
-            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['process-instance-id'] }}</p>
-      </div>
-      <div>
-            <label class="block text-sm font-medium text-gray-700">Container ID</label>
-            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['container-id'] }}</p>
-      </div>
-      <div>
-            <label class="block text-sm font-medium text-gray-700">Process ID</label>
-            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['process-id'] }}</p>
-      </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Statut</label>
-            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['process-instance-state'] }}</p>
-    </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Date de début</label>
-            <p class="mt-1 text-sm text-gray-900">{{ formatDate(selectedInstanceDetails['start-date'] && selectedInstanceDetails['start-date']['java.util.Date']) }}</p>
-              </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Initiateur</label>
-            <p class="mt-1 text-sm text-gray-900">{{ selectedInstanceDetails['initiator'] || '-' }}</p>
-            </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Taux de complétude</label>
-            <div class="mt-1">
-              <div class="w-full bg-gray-200 rounded h-4 relative">
-                <div
-                  class="h-4 rounded bg-blue-500"
-                  [style.width]="(selectedInstanceDetails['tauxCompletu'] || 0) + '%'"
-                ></div>
-                <span class="absolute inset-0 text-xs flex items-center justify-center font-bold text-blue-900">
-                  {{ selectedInstanceDetails['tauxCompletu'] !== undefined ? (selectedInstanceDetails['tauxCompletu'] + '%') : '-' }}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
-      </div>
-
-      <div class="flex justify-end mt-6">
-        <button 
-          class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-          (click)="fermerDetailsModal()">
-          Fermer
-        </button>
       </div>
     </div>
   </div>

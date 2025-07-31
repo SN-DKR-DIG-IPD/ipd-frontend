@@ -50,18 +50,22 @@
         <p class="mt-2 text-gray-600">Remplissez le formulaire pour compléter la tâche</p>
       </div>
       <!-- Affichage du formulaire dynamique -->
-      <app-task-form *ngIf="userTaskContainerId && userTaskId"
-        [containerId]="userTaskContainerId"
-        [taskId]="userTaskId"
-        (completed)="onTaskCompleted()">
-      </app-task-form>
-      <div class="flex justify-between space-x-4 mt-6">
-        <button type="button" (click)="submitUserTaskForm()"
-          class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-          Soumettre
-        </button>
+      <div *ngIf="taskForm && !closeModifModal" style="background: yellow; padding: 10px; margin: 10px;">
+        <p>DEBUG: ModifComponent va être affiché</p>
+        <p>taskForm: {{ taskForm ? 'OUI' : 'NON' }}</p>
+        <p>closeModifModal: {{ closeModifModal }}</p>
+        <p>userTaskContainerId: {{ userTaskContainerId }}</p>
+        <p>userTaskId: {{ userTaskId }}</p>
+      </div>
+      <app-modif *ngIf="taskForm && !closeModifModal"
+        [form]="taskForm"
+        [closeModal]="closeModifModal"
+        [taskInfo]="{ containerId: userTaskContainerId!, taskId: userTaskId! }"
+        (onCompleteTask)="onTaskCompleted()">
+      </app-modif>
+      <div class="flex justify-end space-x-4 mt-6">
         <button type="button" (click)="exitProcess()"
-          class="ml-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
           Annuler
         </button>
       </div>
