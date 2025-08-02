@@ -38,8 +38,8 @@ export class ContentLayoutComponent implements OnInit{
     this.userProfile = rawUsername.replace(/"/g, '');
   }
 
-  onReduceChange(reduce: boolean) {
-    this.reduce = reduce;
+  onReduceChange(event: any) {
+    this.reduce = event;
   }
 
   showMenu() {

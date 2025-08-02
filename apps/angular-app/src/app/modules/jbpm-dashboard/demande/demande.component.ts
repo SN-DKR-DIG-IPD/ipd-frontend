@@ -15,7 +15,7 @@ import {FilterableTask} from "../../../data/model/FilterableTask.model";
 import { Demande } from '../../../shared/models/demande';
 import { RoleService } from '../../../core/service/role/role.service';
 import {async} from "@angular/core/testing";
-
+import { UnifiedAuthService } from '../../../core/service/unified-auth.service';
 
 
 interface TaskInstance {
@@ -57,7 +57,7 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
     processInfos: OneFrontProcessInfo[] = []
     currentUserTask: TaskInstances = {"task-summary":[]}
     currentUserTaskInfos: {[key: string]: {[key:string]: any}} = {}
-    defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!)
+    // ❌ SUPPRIMÉ: defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!)
     closeDetailModal = true;
     closeModifModal = true;
     taskForm : any = null
@@ -78,12 +78,7 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
     users: string[] = [];
     groups: string[] =[];
 
-
-
-   businessCentralHeader = Object.assign({},JSON.parse(sessionStorage.getItem('defaultHeader')!),{
-
-  });
-
+    // ❌ SUPPRIMÉ: businessCentralHeader = Object.assign({},JSON.parse(sessionStorage.getItem('defaultHeader')!),{...});
 
     @Input() group: string|undefined
 
@@ -99,7 +94,9 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
     @Inject(GroupAPI) private groupAPI: IGroupAPI,
 
     private userService: UserService,
-    private roleService: RoleService
+    private roleService: RoleService,
+    // ✅ AJOUTÉ: Service d'authentification unifié
+    private unifiedAuthService: UnifiedAuthService
     //private taskFilter: TaskFilters
   ) { }
 
@@ -201,23 +198,42 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
   }
 
   async displayProcesses(){
+      console.log('🔍 Début de récupération des containers...');
+      
+      try {
+        // ✅ UTILISATION: Headers d'authentification unifiés
+        const authHeaders = this.unifiedAuthService.getAuthHeaders();
+        console.log('🔐 Headers d\'authentification:', authHeaders);
+        
+        // ✅ CONVERSION: HttpHeaders vers HeadersInit
+        const headersInit: HeadersInit = {};
+        authHeaders.keys().forEach(key => {
+          const value = authHeaders.get(key);
+          if (value) headersInit[key] = value;
+        });
+        
+        const containers = await this.containerAPI.listContainers(headersInit);
+        console.log('📦 Containers récupérés:', containers);
 
-      const containers = await this.containerAPI.listContainers(this.defaultHeader);
-
-      for(let container of containers.result['kie-containers']['kie-container']){
-         let process = await this.containerAPI.displayAllProcesses(container['container-id'], this.defaultHeader)
-         for(let elements of Object.values(process)){
-            for(let element of elements){
-              // S'assure que process-id est bien présent
-              const el = element as any;
-              if (!el['process-id'] && el['id']) {
-                el['process-id'] = el['id'];
-              } else if (!el['process-id'] && el['name']) {
-                el['process-id'] = el['name'];
+        for(let container of containers.result['kie-containers']['kie-container']){
+           let process = await this.containerAPI.displayAllProcesses(container['container-id'], headersInit)
+           for(let elements of Object.values(process)){
+              for(let element of elements){
+                // S'assure que process-id est bien présent
+                const el = element as any;
+                if (!el['process-id'] && el['id']) {
+                  el['process-id'] = el['id'];
+                } else if (!el['process-id'] && el['name']) {
+                  el['process-id'] = el['name'];
+                }
+                this.processes.push(el);
               }
-              this.processes.push(el);
-            }
-         }
+           }
+        }
+        
+        console.log('✅ Processus récupérés:', this.processes);
+      } catch (error) {
+        console.error('❌ Erreur lors de la récupération des containers:', error);
       }
   }
 
@@ -231,10 +247,20 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
       this.isPageChanging = true;
 
       try {
+        // ✅ UTILISATION: Headers d'authentification unifiés
+        const authHeaders = this.unifiedAuthService.getAuthHeaders();
+        // ✅ CONVERSION: HttpHeaders vers HeadersInit
+        const headersInit: HeadersInit = {};
+        authHeaders.keys().forEach(key => {
+          const value = authHeaders.get(key);
+          if (value) headersInit[key] = value;
+        });
+        
         const status = `${this.defaultStatus}&pageSize=${itemsPerPage}&page=${page -1}`
+        
         const taskReponse = this.group && this.group === 'group'
-          ? await this.taskAPI.displayConnectedUserPotentialTasks(this.defaultHeader, status)
-          : await this.taskAPI.displayConnectedUserTasks(this.defaultHeader, status);
+          ? await this.taskAPI.displayConnectedUserPotentialTasks(headersInit, status)
+          : await this.taskAPI.displayConnectedUserTasks(headersInit, status);
 
         // update data
         this.currentUserTask = taskReponse;
@@ -259,7 +285,16 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
 
   private async updateTaskDetails() {
     this.currentUserTaskInfos = {};
-    let xmlSvgHeader = Object.assign({}, this.defaultHeader, {
+    // ✅ UTILISATION: Headers d'authentification unifiés
+    const authHeaders = this.unifiedAuthService.getAuthHeaders();
+    // ✅ CONVERSION: HttpHeaders vers HeadersInit
+    const headersInit: HeadersInit = {};
+    authHeaders.keys().forEach(key => {
+      const value = authHeaders.get(key);
+      if (value) headersInit[key] = value;
+    });
+    
+    let xmlSvgHeader = Object.assign({}, headersInit, {
       'Content-Type': 'application/xml;charset=UTF-8',
       'Accept': 'application/svg+xml'
     });
@@ -270,13 +305,13 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
       this.currentUserTaskInfos[e['task-id']]['processInfo'] = await this.frontDemandeAPI.getProcessByProcessId(
         e['task-proc-def-id'],
         e['task-container-id'],
-        this.defaultHeader
+        headersInit
       );
 
       this.currentUserTaskInfos[e['task-id']]['processInstanceDetail'] = await this.processInstanceAPI.displayOneProcessInstanceDetail(
         e['task-container-id'],
         e['task-proc-inst-id'],
-        this.defaultHeader
+        headersInit
       );
 
       if (e['task-workitem-id']) {
@@ -284,7 +319,7 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
           e['task-container-id'],
           e['task-proc-inst-id'],
           e['task-workitem-id'],
-          this.defaultHeader
+          headersInit
         );
       }
 
@@ -353,9 +388,17 @@ export class DemandeComponent implements OnInit, AfterViewChecked {
 
       // statusQuery += `&pageSize=${this.itemsPerPage}&page=${this.currentPage - 1}`;
 
+      // ✅ CONVERSION: HttpHeaders vers HeadersInit
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      const headersInit: HeadersInit = {};
+      authHeaders.keys().forEach(key => {
+        const value = authHeaders.get(key);
+        if (value) headersInit[key] = value;
+      });
+      
       const taskResponse = this.group && this.group === 'group'
-        ? await this.taskAPI.displayConnectedUserPotentialTasks(this.defaultHeader, statusQuery)
-        : await this.taskAPI.displayConnectedUserTasks(this.defaultHeader, statusQuery);
+        ? await this.taskAPI.displayConnectedUserPotentialTasks(headersInit, statusQuery)
+        : await this.taskAPI.displayConnectedUserTasks(headersInit, statusQuery);
 
       //update filters
       let filteredTasks = taskResponse['task-summary'].filter((task: TaskInstance) => {
@@ -642,26 +685,68 @@ activeFilter: string | null = null;
 
 
   async startProcess(e: ProcessType){
-   console.log('Process utilisé pour création :', e);
-   console.log('process-id utilisé :', e['process-id']);
-   this.createdProcessId= await this.processInstanceAPI.createOneProcessInstance(e['container-id'], e['process-id'], this.defaultHeader)
-   console.log('** createdProcessId: ', this.createdProcessId)
-   let createdProcessDetails = await this.processInstanceAPI.displayOneProcessInstanceDetail(e['container-id'], this.createdProcessId, this.defaultHeader)
-   console.log('** created detail: ', createdProcessDetails)
-   await this.completeTask({containerId: createdProcessDetails['container-id'], taskId: createdProcessDetails['active-user-tasks']['task-summary'][0]['task-id']})
-  //  await this.completeTask({containerId: 'evaluation', taskId: 417})
+   console.log('🚀 Début du processus:', e);
+   console.log('📋 process-id utilisé:', e['process-id']);
+   
+   try {
+     // ✅ UTILISATION: Headers d'authentification unifiés
+     const authHeaders = this.unifiedAuthService.getAuthHeaders();
+     // ✅ CONVERSION: HttpHeaders vers HeadersInit
+     const headersInit: HeadersInit = {};
+     authHeaders.keys().forEach(key => {
+       const value = authHeaders.get(key);
+       if (value) headersInit[key] = value;
+     });
+     
+     this.createdProcessId = await this.processInstanceAPI.createOneProcessInstance(
+       e['container-id'], 
+       e['process-id'], 
+       headersInit
+     );
+     
+     console.log('✅ Processus créé avec ID:', this.createdProcessId);
+     
+     let createdProcessDetails = await this.processInstanceAPI.displayOneProcessInstanceDetail(
+       e['container-id'], 
+       this.createdProcessId, 
+       headersInit
+     );
+     
+     console.log('📄 Détails du processus créé:', createdProcessDetails);
+     
+     await this.completeTask({
+       containerId: createdProcessDetails['container-id'], 
+       taskId: createdProcessDetails['active-user-tasks']['task-summary'][0]['task-id']
+     });
+   } catch (error) {
+     console.error('❌ Erreur lors du démarrage du processus:', error);
+   }
   }
 
-
   async completeTask({containerId, taskId}:{containerId: string, taskId:number}){
-      let htmlHeader = Object.assign({},this.defaultHeader,{
+      // ✅ UTILISATION: Headers d'authentification unifiés
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      // ✅ CONVERSION: HttpHeaders vers HeadersInit
+      const headersInit: HeadersInit = {};
+      authHeaders.keys().forEach(key => {
+        const value = authHeaders.get(key);
+        if (value) headersInit[key] = value;
+      });
+      
+      let htmlHeader = Object.assign({}, headersInit, {
         'Content-Type': 'text/xml;charset=UTF-8',
         'Accept': 'text/html'
-      })
-    this.taskForm = await this.formAPI.getTaskInstanceForm(containerId, taskId, htmlHeader)
-    this.currentTaskInfo = { containerId, taskId };
-    this.setCloseDetailModal(true)
-    this.closeModifModal = false
+      });
+      
+      try {
+        this.taskForm = await this.formAPI.getTaskInstanceForm(containerId, taskId, htmlHeader);
+        this.currentTaskInfo = { containerId, taskId };
+        this.setCloseDetailModal(true);
+        this.closeModifModal = false;
+        console.log('✅ Formulaire récupéré pour la tâche:', taskId);
+      } catch (error) {
+        console.error('❌ Erreur lors de la récupération du formulaire:', error);
+      }
   }
 
   toggleFilter(filter: string): void {

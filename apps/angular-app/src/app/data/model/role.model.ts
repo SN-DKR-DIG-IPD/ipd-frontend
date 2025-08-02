@@ -1,11 +1,10 @@
 import { IPermission } from "./permission.model";
 
 export interface IRole {
-  roleId?: number;
-  name?: string;
+  roleId: number;
+  name: string;
   description?: string;
-  externalReference?: any;
-  creationDate?: string;
-  modificationDate?: string | null;
-  permissions?: IPermission[];
+  permissions?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }

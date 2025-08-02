@@ -42,9 +42,9 @@
               "src/favicon.ico",
               "src/assets",
               {
-                "glob": "**/*",
+                "glob": "env.js",
                 "input": "src/env",
-                "output": "/env"
+                "output": "/"
               }
             ],
             "styles": [
@@ -52,7 +52,7 @@
               "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
               "src/styles.scss"
             ],
-            "scripts": ["src/env/env.js"]
+            "scripts": []
           },
           "configurations": {
             "production": {
@@ -62,9 +62,7 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
-              "scripts": [
-                "src/env/env.template.js"
-              ],
+                          "scripts": [],
               "budgets": [
                 {
                   "type": "initial",
@@ -90,9 +88,7 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ],
-            "scripts": [
-              "src/env/env.dev.js"
-            ]
+            "scripts": []
             },
             "fr" : {
               "localize": ["fr"]
@@ -105,9 +101,7 @@
                   "with": "src/environments/environment.preprod.ts"
                 }
               ],
-            "scripts": [
-              "src/env/env.pre-prod.js"
-            ]
+                         "scripts": []
             },
             "qualification": {
               "fileReplacements": [
@@ -116,22 +110,21 @@
                   "with": "src/environments/environment.qualification.ts"
                 }
               ],
-              "scripts": [
-                "src/env/env.qlf.js"
-              ]
+                             "scripts": []
               }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+          },
           "configurations": {
             "production": {
               "buildTarget": "JbpmFrontend:build:production"
             },
             "development": {
-              "buildTarget": "JbpmFrontend:build:development",
-              "proxyConfig": "proxy.conf.json"
+              "buildTarget": "JbpmFrontend:build:development"
             }
           },
           "defaultConfiguration": "development"

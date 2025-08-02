@@ -1,4 +1,6 @@
-import { Component, Input, HostListener } from '@angular/core';
+import { UnifiedAuthService } from '../../core/service/unified-auth.service';
+import { Component, Input } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-user-profile-sidebar',
@@ -10,25 +12,13 @@ export class UserProfileSidebarComponent {
   @Input() roles: string[] = [];
   @Input() groups: string[] = [];
   @Input() avatarUrl?: string;
-  @Input() isSidebarReduced: boolean = false;
 
-  menuOpen = false;
+  constructor(
+    private unifiedAuthService: UnifiedAuthService,
+    private router: Router
+  ) {}
 
-  toggleMenu(event: MouseEvent) {
-    event.stopPropagation();
-    this.menuOpen = !this.menuOpen;
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.user-profile-dropdown')) {
-      this.menuOpen = false;
-    }
-  }
-
-  onLogout() {
-    sessionStorage.clear();
-    window.location.href = '/login';
+  onLogout(): void {
+    this.unifiedAuthService.logout();
   }
 } 

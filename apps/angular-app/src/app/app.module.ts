@@ -1,27 +1,35 @@
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CUSTOM_ELEMENTS_SCHEMA, NgModule, APP_INITIALIZER } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+import { ReactiveFormsModule } from '@angular/forms';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { AppRoutingModule } from './app-routing.module';
-import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import { AppComponent } from './app.component';
-import {HttpClient, HttpClientModule} from '@angular/common/http';
+import { SharedModule } from './shared/shared.module';
+
+// Keycloak et permissions
 import { KeycloakAngularModule, KeycloakService } from 'keycloak-angular';
 import { NgxPermissionsModule } from 'ngx-permissions';
-import { SharedModule } from './shared/shared.module';
 import { initKeycloak } from './core/helper/keycloak/init.keycloak';
-import { ErrorStateMatcher, ShowOnDirtyErrorStateMatcher } from '@angular/material/core';
-import { AppLoader } from '@jbpm/loader';
-import { BPMDefaultConfigAPI, AccountAPI, ContainerAPI, ProcessInstanceAPI, TaskAPI, WorkItemsAPI, FormAPI, DiagramAPI, FrontDemandeAPI, GroupAPI, ProcessAPI, DocumentAPI } from './injections';
-import {TranslateHttpLoader} from "@ngx-translate/http-loader";
-import { LucideAngularModule, Edit2, MoreVertical, Menu, Settings, Bell, BarChart3, Plus, Globe } from "lucide-angular";
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { APP_INITIALIZER } from '@angular/core';
 
-export function HttpLoaderFactory(http: HttpClient) {
-  return new TranslateHttpLoader(http);
-}
+// jBPM Loader et APIs
+import { AppLoader } from '@jbpm/loader';
+import { 
+  BPMDefaultConfigAPI, 
+  AccountAPI, 
+  ContainerAPI, 
+  ProcessInstanceAPI, 
+  TaskAPI, 
+  WorkItemsAPI, 
+  FormAPI, 
+  DiagramAPI, 
+  FrontDemandeAPI, 
+  GroupAPI, 
+  ProcessAPI, 
+  DocumentAPI 
+} from './injections';
 
 @NgModule({
   declarations: [
@@ -29,46 +37,36 @@ export function HttpLoaderFactory(http: HttpClient) {
   ],
   imports: [
     BrowserModule,
-    BrowserAnimationsModule,
     HttpClientModule,
+    ReactiveFormsModule,
+    BrowserAnimationsModule,
     AppRoutingModule,
     KeycloakAngularModule,
-    CommonModule,
-    RouterModule,
-    LucideAngularModule.pick({ Edit2, MoreVertical, Menu, Settings, Bell, BarChart3, Plus, Globe }),
-    TranslateModule.forRoot({
-      loader: {
-        provide: TranslateLoader,
-        useFactory: HttpLoaderFactory,
-        deps: [HttpClient]
-      }
-    }),
     NgxPermissionsModule.forRoot(),
-    SharedModule,
+    SharedModule
   ],
   providers: [
+    // Keycloak initialization
     {
       provide: APP_INITIALIZER,
       useFactory: initKeycloak,
       deps: [KeycloakService],
       multi: true,
     },
-    { provide: ErrorStateMatcher, useClass: ShowOnDirtyErrorStateMatcher },
-		{ provide: BPMDefaultConfigAPI, useValue: AppLoader.getDefaultConfig() },
-		{ provide: AccountAPI, useValue: AppLoader.getAccount() },
-		{ provide: ContainerAPI, useValue: AppLoader.getContainer()},
-		{ provide: ProcessInstanceAPI, useValue: AppLoader.getProcessInstance()},
-		{ provide: ProcessAPI, useValue: AppLoader.getProcess()},
-		{ provide: TaskAPI, useValue: AppLoader.getTask()},
-		{ provide: WorkItemsAPI, useValue: AppLoader.getWorkItems()},
-		{ provide: FormAPI, useValue: AppLoader.getForm()},
-		{ provide: DiagramAPI, useValue: AppLoader.getDiagram()},
-		{ provide: GroupAPI, useValue: AppLoader.getGroup()},
-		{ provide: DocumentAPI, useValue: AppLoader.getDocument()},
-		{ provide: FrontDemandeAPI, useValue: AppLoader.getFrontDemande()},
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    // jBPM APIs
+    { provide: BPMDefaultConfigAPI, useValue: AppLoader.getDefaultConfig() },
+    { provide: AccountAPI, useValue: AppLoader.getAccount() },
+    { provide: ContainerAPI, useValue: AppLoader.getContainer() },
+    { provide: ProcessInstanceAPI, useValue: AppLoader.getProcessInstance() },
+    { provide: ProcessAPI, useValue: AppLoader.getProcess() },
+    { provide: TaskAPI, useValue: AppLoader.getTask() },
+    { provide: WorkItemsAPI, useValue: AppLoader.getWorkItems() },
+    { provide: FormAPI, useValue: AppLoader.getForm() },
+    { provide: DiagramAPI, useValue: AppLoader.getDiagram() },
+    { provide: GroupAPI, useValue: AppLoader.getGroup() },
+    { provide: DocumentAPI, useValue: AppLoader.getDocument() },
+    { provide: FrontDemandeAPI, useValue: AppLoader.getFrontDemande() }
   ],
-  bootstrap: [AppComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  bootstrap: [AppComponent]
 })
 export class AppModule { }

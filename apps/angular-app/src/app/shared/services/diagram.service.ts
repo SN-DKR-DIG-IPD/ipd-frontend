@@ -1,40 +1,22 @@
-import { Injectable, Inject } from '@angular/core';
-import { DiagramAPI } from '../../injections';
-import { IDiagramAPI } from '@jbpm/domain';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DiagramService {
-  constructor(@Inject(DiagramAPI) private diagramAPI: IDiagramAPI) {}
+  // ✅ CORRIGÉ: Utilise environment (qui lit window.__env)
+  private apiUrl = environment.bpmAPIBaseUrl;
 
-  async getProcessInstanceDiagram(containerId: string, processInstanceId: number, headers: any): Promise<string> {
-    try {
-      console.log('🔍 DiagramService - Paramètres:', { containerId, processInstanceId, headers });
-      
-      // Récupérer l'URL de base depuis l'environnement
-      const baseUrl = (window as any).__env?.bpmAPIBaseUrl || '/jbpm/api';
-      console.log('🔍 DiagramService - URL de base:', baseUrl);
-      
-      const result = await this.diagramAPI.getProcessInstanceDiagram(containerId, processInstanceId, headers);
-      console.log('✅ DiagramService - Résultat récupéré, longueur:', result.length);
-      return result;
-    } catch (error) {
-      console.error('❌ Erreur lors de la récupération du diagramme:', error);
-      throw error;
-    }
+  constructor(private http: HttpClient) { }
+
+  getProcessDiagram(containerId: string, processId: string): Observable<string> {
+    return this.http.get(`${this.apiUrl}containers/${containerId}/processes/${processId}/diagram`, { responseType: 'text' });
   }
 
-  async getProcessDiagram(containerId: string, processId: string, headers: any): Promise<string> {
-    try {
-      console.log('🔍 DiagramService - getProcessDiagram - Paramètres:', { containerId, processId, headers });
-      
-      const result = await this.diagramAPI.getProcessDiagram(containerId, processId, headers);
-      console.log('✅ DiagramService - getProcessDiagram - Résultat récupéré, longueur:', result.length);
-      return result;
-    } catch (error) {
-      console.error('❌ Erreur lors de la récupération du diagramme de processus:', error);
-      throw error;
-    }
+  getProcessInstanceDiagram(containerId: string, processInstanceId: number): Observable<string> {
+    return this.http.get(`${this.apiUrl}containers/${containerId}/processes/instances/${processInstanceId}/diagram`, { responseType: 'text' });
   }
 } 

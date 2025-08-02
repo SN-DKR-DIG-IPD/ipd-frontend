@@ -5,15 +5,13 @@
   // SIS API url
   window.__env = {
     keycloak: {
-      // Url via proxy Angular
-      issuer: '/realms',
+      issuer: 'http://localhost:8081/',
       realm: 'atos',
       clientId: 'atos-client',
     },
-
-    apiUrl: '/api',
-    bpmAPIBaseUrl: '/jbpm/api/',
-    businessCentralAPIBaseUrl: '/jbpm/business-central/rest/'
+    apiUrl: 'http://localhost:8081',
+    bpmAPIBaseUrl: 'http://localhost:8080/kie-server/services/rest/',
+    businessCentralAPIBaseUrl: 'http://localhost:8080/business-central/rest/'
   };
 
   // Whether or not to enable debug mode

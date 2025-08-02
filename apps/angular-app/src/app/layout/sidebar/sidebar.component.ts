@@ -1,11 +1,9 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectorRef, OnInit } from '@angular/core';
-import { MediaMatcher } from '@angular/cdk/layout';
-import { NavigationEnd, Router } from "@angular/router";
-import { TabNavigationService } from "../../core/service/sidebar/tab-navigation.service";
-import { NavigationTabModel } from "../../data/model/NavigationTab.model";
-import { filter } from "rxjs";
-import { AuthService } from '../../core/service/user/auth.service';
+import { Component, OnInit, EventEmitter, Output } from '@angular/core';
+import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import { UnifiedAuthService } from '../../core/service/unified-auth.service';
+import { TabNavigationService } from '../../core/service/sidebar/tab-navigation.service';
+import { NavigationTabModel } from '../../data/model/NavigationTab.model';
 
 @Component({
   selector: 'app-sidebar',
@@ -13,44 +11,31 @@ import { Observable } from 'rxjs';
   styleUrls: ['./sidebar.component.scss']
 })
 export class SidebarComponent implements OnInit {
-  @Input() isSidebarOpen = false;
-  @Output() isSidebarOpenEvent = new EventEmitter<boolean>();
-  mobileQuery: MediaQueryList;
-  isReduced: boolean = false;
-
-  username$!: Observable<string|null>;
-  roles$!: Observable<string[]>;
-  groups$!: Observable<string[]>;
-
-  constructor(
-    changeDetectorRef: ChangeDetectorRef,
-    media: MediaMatcher,
-    private tabNavigationService: TabNavigationService,
-    private router: Router,
-    private authService: AuthService
-  ) {
-    this.mobileQuery = media.matchMedia('(max-width: 1023px)');
-    this._mobileQueryListener = () => changeDetectorRef.detectChanges();
-    this.mobileQuery.addEventListener("change", () => {
-      this._mobileQueryListener();
-    });
-  }
-
-  private _mobileQueryListener: () => void;
-
+  @Output() reduceChange = new EventEmitter<boolean>();
+  
+  isCollapsed = false;
+  isReduced = false;
+  username$: Observable<string | null>;
+  roles$: Observable<string[]>;
+  groups$: Observable<string[]>;
+  
   selectedMenuIndex: number | null = null;
   selectedMenu: number = 0;
   selectedSubMenu: string = '';
-  reduce = false;
   menuItems!: NavigationTabModel[];
-  @Output() menuSelected = new EventEmitter<{ menu: NavigationTabModel, subMenu?: string }>();
-  @Output() reduceChange = new EventEmitter<boolean>();
 
-  ngOnInit() {
+  constructor(
+    private router: Router,
+    private unifiedAuthService: UnifiedAuthService,
+    private tabNavigationService: TabNavigationService
+  ) {
+    this.username$ = this.unifiedAuthService.getUsername$();
+    this.roles$ = this.unifiedAuthService.getRoles$();
+    this.groups$ = this.unifiedAuthService.getGroups$();
+  }
+
+  ngOnInit(): void {
     this.initTabMenus();
-    this.username$ = this.authService.getUsername$();
-    this.roles$ = this.authService.getRoles$();
-    this.groups$ = this.authService.getGroups$();
     const storedMenu = sessionStorage.getItem('selectedMenu');
     const storedSubMenu = sessionStorage.getItem('selectedSubMenu');
     if (storedMenu) {
@@ -59,17 +44,16 @@ export class SidebarComponent implements OnInit {
     if (storedSubMenu) {
       this.selectedSubMenu = storedSubMenu;
     }
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
-      const currentRoute = this.router.url;
-      this.highlightCurrentRoute(currentRoute);
-    });
-    this.highlightCurrentRoute(this.router.url);
   }
 
   private initTabMenus(): void {
     this.menuItems = this.tabNavigationService.initNavigationTabs();
+  }
+
+  toggleSidebar(): void {
+    this.isCollapsed = !this.isCollapsed;
+    this.isReduced = !this.isReduced;
+    this.reduceChange.emit(this.isReduced);
   }
 
   toggleSubMenu(index: number): void {
@@ -84,67 +68,16 @@ export class SidebarComponent implements OnInit {
     } else {
       this.selectedMenu = index;
     }
-    if (this.reduce) {
-      const selectedSubMenu = item.subMenu?.find(sub => sub.route === this.selectedSubMenu);
-      if (selectedSubMenu) {
-        this.selectedSubMenu = selectedSubMenu.route;
-      }
-    }
     sessionStorage.setItem('selectedMenu', this.selectedMenu.toString());
     sessionStorage.setItem('selectedSubMenu', this.selectedSubMenu);
   }
 
-  reduceSidebar() {
-    this.reduce = !this.reduce;
-    if (this.reduce) {
-      this.selectedMenuIndex = -1;
-    }
-    this.reduceChange.emit(this.reduce);
-  }
-
   selectSubMenu(route: string) {
     this.selectedSubMenu = route;
+    sessionStorage.setItem('selectedSubMenu', this.selectedSubMenu);
   }
 
-  toggleSidebar() {
-    this.isReduced = !this.isReduced;
-  }
-
-  private highlightCurrentRoute(route: string) {
-    let found = false;
-    if (this.selectedSubMenu && route.startsWith(`/${this.selectedSubMenu}`)) {
-      return;
-    }
-    for (let [index, item] of this.menuItems.entries()) {
-      if (item.subMenu) {
-        const foundSub = item.subMenu.find(sub => route.startsWith(`/${sub.route}`));
-        if (foundSub) {
-          this.selectedMenu = index;
-          this.selectedMenuIndex = index;
-          this.selectedSubMenu = foundSub.route;
-          found = true;
-          break;
-        }
-      }
-    }
-    if (!found && this.selectedSubMenu && route.startsWith(`/${this.selectedSubMenu.split('/')[0]}`)) {
-      return;
-    }
-    if (!found) {
-      for (let [index, item] of this.menuItems.entries()) {
-        if (item.route && route.startsWith(item.route)) {
-          this.selectedMenu = index;
-          this.selectedMenuIndex = null;
-          this.selectedSubMenu = '';
-          found = true;
-          break;
-        }
-      }
-    }
-    if (!found) {
-      this.selectedMenu = 0;
-      this.selectedMenuIndex = null;
-      this.selectedSubMenu = '';
-    }
+  logout(): void {
+    this.unifiedAuthService.logout();
   }
 }
