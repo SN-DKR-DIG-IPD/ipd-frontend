@@ -20,7 +20,19 @@ export class KeycloakAuthInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    // Utiliser Keycloak pour tous les autres appels API
+    // Pour les appels jBPM via proxy, utiliser Basic Auth
+    if (req.url.includes('/jbpm/api/')) {
+      console.log('Intercepteur: Utilisation Basic Auth pour jBPM via proxy');
+      const basicAuth = btoa('eddy:eddy123'); // Même credentials que Postman
+      const authReq = req.clone({ 
+        headers: req.headers.set('Authorization', `Basic ${basicAuth}`)
+          .set('Accept', 'application/xml, application/json')
+          .set('Content-Type', 'application/json')
+      });
+      return next.handle(authReq);
+    }
+
+    // Pour tous les autres appels, utiliser Keycloak
     return this.keycloakService.addTokenToHeader(req.headers).pipe(
       switchMap(headers => {
         const authReq = req.clone({ 

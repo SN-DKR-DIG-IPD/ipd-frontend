@@ -27,6 +27,6 @@ export const environment: IEnvironment = {
       clientId: getEnvValue('keycloak.clientId', 'atos-client'),
     },
   apiUrl: getEnvValue('apiUrl', 'http://localhost:8081'),
-  bpmAPIBaseUrl: getEnvValue('bpmAPIBaseUrl', 'http://localhost:8080/kie-server/services/rest/'),
+  bpmAPIBaseUrl: getEnvValue('bpmAPIBaseUrl', '/jbpm/api/'),
   businessCentralAPIBaseUrl: getEnvValue('businessCentralAPIBaseUrl', 'http://localhost:8080/business-central/rest/')
 };

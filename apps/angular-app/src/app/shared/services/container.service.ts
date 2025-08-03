@@ -18,21 +18,24 @@ export class ContainerService {
 
   // ✅ MÉTHODES OBSERVABLE (nouvelle approche)
   getContainers(): Observable<any> {
-    console.log('🔍 ContainerService: Récupération des containers depuis:', this.apiUrl + 'containers');
-    return this.http.get(this.apiUrl + 'containers');
+    console.log('🔍 ContainerService: Récupération des containers depuis:', this.apiUrl + 'server/containers');
+    return this.http.get(this.apiUrl + 'server/containers');
   }
 
   getProcesses(containerId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}containers/${containerId}/processes`);
+    return this.http.get(`${this.apiUrl}server/containers/${containerId}/processes`);
   }
 
   // ✅ MÉTHODES PROMISE (compatibilité avec l'existant)
   async listContainers(): Promise<any[]> {
-    console.log('🔍 ContainerService: Récupération des containers depuis:', this.apiUrl + 'containers');
+    console.log('🔍 ContainerService: Récupération des containers depuis:', this.apiUrl + 'server/containers');
     
     try {
-      const result = await this.http.get(this.apiUrl + 'containers').toPromise();
+      const result = await this.http.get(this.apiUrl + 'server/containers').toPromise();
       console.log('✅ ContainerService: Containers récupérés:', result);
+      console.log('🔍 ContainerService: Type de résultat:', typeof result);
+      console.log('🔍 ContainerService: Clés du résultat:', Object.keys(result || {}));
+      console.log('🔍 ContainerService: Structure complète:', JSON.stringify(result, null, 2));
       
       if (!result) {
         console.warn('ContainerService: Réponse vide reçue');
@@ -47,15 +50,15 @@ export class ContainerService {
           for (const container of kieContainers) {
             containers.push({
               'container-id': container['container-id'],
-              'container-alias': container['container-alias'],
-              'status': container['status'],
+              'container-alias': container['container-alias'] || container['container-id'],
+              'status': container['status'] || 'STARTED',
             });
           }
         } else if (kieContainers) {
           containers.push({
             'container-id': kieContainers['container-id'],
-            'container-alias': kieContainers['container-alias'],
-            'status': kieContainers['status'],
+            'container-alias': kieContainers['container-alias'] || kieContainers['container-id'],
+            'status': kieContainers['status'] || 'STARTED',
           });
         }
       }
@@ -72,7 +75,7 @@ export class ContainerService {
     console.log('🔍 ContainerService: Récupération des processus pour container:', containerId);
     
     try {
-      const result = await this.http.get(`${this.apiUrl}containers/${containerId}/processes`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/processes`).toPromise();
       console.log('✅ ContainerService: Processus récupérés:', result);
       
       const resultAny = result as any;
@@ -85,7 +88,7 @@ export class ContainerService {
 
   async getProcessDefinitions(containerId: string, headers?: any): Promise<any[]> {
     try {
-      const result = await this.http.get(`${this.apiUrl}containers/${containerId}/processes`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/processes`).toPromise();
       const resultAny = result as any;
       return resultAny?.processes || [];
     } catch (error: any) {

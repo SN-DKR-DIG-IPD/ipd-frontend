@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -30,6 +30,9 @@ import {
   ProcessAPI, 
   DocumentAPI 
 } from './injections';
+
+// Intercepteurs
+import { KeycloakAuthInterceptor } from './core/service/user/keycloak-auth.interceptor';
 
 @NgModule({
   declarations: [
@@ -65,7 +68,9 @@ import {
     { provide: DiagramAPI, useValue: AppLoader.getDiagram() },
     { provide: GroupAPI, useValue: AppLoader.getGroup() },
     { provide: DocumentAPI, useValue: AppLoader.getDocument() },
-    { provide: FrontDemandeAPI, useValue: AppLoader.getFrontDemande() }
+    { provide: FrontDemandeAPI, useValue: AppLoader.getFrontDemande() },
+    // Intercepteur pour l'authentification
+    { provide: HTTP_INTERCEPTORS, useClass: KeycloakAuthInterceptor, multi: true }
   ],
   bootstrap: [AppComponent]
 })
