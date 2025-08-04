@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { UserService } from '../../shared/services/user.service';
 import { FormAPI } from '../../injections';
 import { IFormAPI } from '@jbpm/domain';
+import { UnifiedAuthService } from '../../core/service/unified-auth.service';
 
 @Component({
   selector: 'app-task-form',
@@ -82,7 +83,8 @@ export class TaskFormComponent implements OnInit, OnChanges {
     private fb: FormBuilder,
     private sanitizer: DomSanitizer,
     private http: HttpClient,
-    @Inject(FormAPI) public formAPI: IFormAPI
+    @Inject(FormAPI) public formAPI: IFormAPI,
+    private unifiedAuthService: UnifiedAuthService
   ) {}
 
   async ngOnInit() {
@@ -121,18 +123,15 @@ export class TaskFormComponent implements OnInit, OnChanges {
     try {
       console.log('Chargement du formulaire pour la tâche:', this.taskId, 'container:', this.containerId);
       
-      // Utiliser FormAPI comme dans jBPM Portal
-      const defaultHeader = sessionStorage.getItem('defaultHeader');
-      let htmlHeader = defaultHeader ? 
-        Object.assign({}, JSON.parse(defaultHeader), {
-          'Content-Type': 'text/xml;charset=UTF-8',
-          'Accept': 'text/html'
-        }) : {
-          'Accept': 'text/html'
-        };
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      const htmlHeaders = {
+        'Content-Type': 'text/html',
+        'Accept': 'text/html'
+      };
       
-      console.log('FormAPI: Récupération du formulaire avec headers:', htmlHeader);
-      const htmlContent = await this.formAPI.getTaskInstanceForm(this.containerId, this.taskId, htmlHeader);
+      console.log('FormAPI: Récupération du formulaire avec headers:', htmlHeaders);
+      const htmlContent = await this.formAPI.getTaskInstanceForm(this.containerId, this.taskId, htmlHeaders);
       
       if (htmlContent && htmlContent.length > 0) {
         this.formHtml = htmlContent;

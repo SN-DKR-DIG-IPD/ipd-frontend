@@ -1,6 +1,8 @@
-import { Component, EventEmitter, Input, Output, OnInit, ViewChild, ElementRef, OnChanges, SimpleChanges, Renderer2, AfterViewInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, ViewChild, ElementRef, OnChanges, SimpleChanges, Renderer2, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { ScriptService } from '../../../shared/services/script-service';
 import { TasKStatus } from '@jbpm/domain';
+import { HttpClient } from '@angular/common/http';
+import { UnifiedAuthService } from '../../../core/service/unified-auth.service';
 
 @Component({
   selector: 'app-modif',
@@ -18,7 +20,9 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
 
   constructor(
     private renderer: Renderer2,
-    private scriptService: ScriptService
+    private scriptService: ScriptService,
+    private http: HttpClient,
+    private unifiedAuthService: UnifiedAuthService
   ) {}
 
   ngOnInit() {
@@ -292,40 +296,27 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
       return;
     }
 
-    // Fonction pour faire des requêtes authentifiées
-    const makeRequest = (url: string, method: string, data?: any) => {
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open(method, url, true);
+    // ✅ REMPLACÉ: XMLHttpRequest par HttpClient
+    const makeRequest = async (url: string, method: string, data?: any) => {
+      try {
+        const authHeaders = this.unifiedAuthService.getAuthHeaders();
         
-        // Récupère le token depuis sessionStorage
-        const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader') || '{}');
-        if (defaultHeader.Authorization) {
-          xhr.setRequestHeader('Authorization', defaultHeader.Authorization);
-        }
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Accept', 'application/json');
-        
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === 4) {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve(xhr.responseText);
-            } else {
-              reject(new Error('HTTP ' + xhr.status + ': ' + xhr.statusText));
-            }
+        if (method === 'PUT') {
+          if (data) {
+            return await this.http.put(url, data, { headers: authHeaders }).toPromise();
+          } else {
+            return await this.http.put(url, {}, { headers: authHeaders }).toPromise();
           }
-        };
-        
-        xhr.onerror = function() {
-          reject(new Error('Erreur réseau'));
-        };
-        
-        if (data) {
-          xhr.send(JSON.stringify(data));
+        } else if (method === 'POST') {
+          return await this.http.post(url, data, { headers: authHeaders }).toPromise();
+        } else if (method === 'GET') {
+          return await this.http.get(url, { headers: authHeaders }).toPromise();
         } else {
-          xhr.send();
+          throw new Error(`Méthode HTTP non supportée: ${method}`);
         }
-      });
+      } catch (error) {
+        throw new Error('Erreur réseau: ' + error);
+      }
     };
 
     // Fonction pour récupérer les données du formulaire

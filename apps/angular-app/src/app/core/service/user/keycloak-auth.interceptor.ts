@@ -3,15 +3,19 @@ import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/c
 import { Observable } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
 import { switchMap } from 'rxjs/operators';
+import { UnifiedAuthService } from '../unified-auth.service';
 
 @Injectable()
 export class KeycloakAuthInterceptor implements HttpInterceptor {
-  constructor(private keycloakService: KeycloakService) {}
+  constructor(
+    private keycloakService: KeycloakService,
+    private unifiedAuthService: UnifiedAuthService
+  ) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Exclure les appels d'authentification Keycloak pour éviter les conflits
     if (req.url.includes('/realms/') || req.url.includes('/protocol/openid-connect/token')) {
-      console.log('Intercepteur: Exclusion de l\'appel d\'authentification Keycloak');
+      console.log('🔐 Intercepteur: Exclusion de l\'appel d\'authentification Keycloak');
       return next.handle(req);
     }
 
@@ -20,26 +24,72 @@ export class KeycloakAuthInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    // Pour les appels jBPM via proxy, utiliser Basic Auth
-    if (req.url.includes('/jbpm/api/')) {
-      console.log('Intercepteur: Utilisation Basic Auth pour jBPM via proxy');
-      const basicAuth = btoa('eddy:eddy123'); // Même credentials que Postman
+    // ✅ KEYCLOAK PARTOUT - y compris pour jBPM !
+    console.log('🔐 Intercepteur: Utilisation Keycloak pour tous les appels (y compris jBPM)');
+    
+    // Vérifier directement le token dans localStorage
+    const token = localStorage.getItem('keycloak_token');
+    const isLoggedIn = this.unifiedAuthService.isLoggedIn();
+    
+    console.log('🔐 Intercepteur: Debug - Token existe:', !!token);
+    console.log('🔐 Intercepteur: Debug - Utilisateur connecté (service):', isLoggedIn);
+    console.log('🔐 Intercepteur: Debug - URL de la requête:', req.url);
+    
+    // Si on a un token mais que le service ne pense pas qu'on est connecté, mettre à jour l'état
+    if (token && !isLoggedIn) {
+      console.log('🔐 Intercepteur: Token trouvé mais service non connecté, mise à jour de l\'état...');
+      // Forcer la mise à jour de l'état de connexion
+      this.unifiedAuthService['isAuthenticatedSubject'].next(true);
+    }
+    
+    if (token) {
+      console.log('🔐 Intercepteur: Token trouvé, ajout du Bearer token');
+      // Définir les headers appropriés selon le type d'appel
+      let contentType = 'application/json';
+      let accept = 'application/json';
+      
+      // Pour les formulaires jBPM, utiliser text/html
+      if (req.url.includes('/forms/')) {
+        contentType = 'text/html';
+        accept = 'text/html';
+      }
+      
+      // Pour les appels jBPM API, utiliser XML/JSON
+      if (req.url.includes('/jbpm/api/')) {
+        accept = 'application/xml, application/json';
+      }
+      
       const authReq = req.clone({ 
-        headers: req.headers.set('Authorization', `Basic ${basicAuth}`)
-          .set('Accept', 'application/xml, application/json')
-          .set('Content-Type', 'application/json')
+        headers: req.headers
+          .set('Authorization', `Bearer ${token}`)
+          .set('Content-Type', contentType)
+          .set('Accept', accept)
+      });
+      return next.handle(authReq);
+    } else {
+      console.warn('⚠️ Intercepteur: Aucun token trouvé, requête sans authentification');
+      console.warn('⚠️ Intercepteur: L\'utilisateur doit se connecter d\'abord');
+      // Définir les headers appropriés selon le type d'appel
+      let contentType = 'application/json';
+      let accept = 'application/json';
+      
+      // Pour les formulaires jBPM, utiliser text/html
+      if (req.url.includes('/forms/')) {
+        contentType = 'text/html';
+        accept = 'text/html';
+      }
+      
+      // Pour les appels jBPM API, utiliser XML/JSON
+      if (req.url.includes('/jbpm/api/')) {
+        accept = 'application/xml, application/json';
+      }
+      
+      const authReq = req.clone({ 
+        headers: req.headers
+          .set('Content-Type', contentType)
+          .set('Accept', accept)
       });
       return next.handle(authReq);
     }
-
-    // Pour tous les autres appels, utiliser Keycloak
-    return this.keycloakService.addTokenToHeader(req.headers).pipe(
-      switchMap(headers => {
-        const authReq = req.clone({ 
-          headers: headers.set('Content-Type', 'application/json')
-        });
-        return next.handle(authReq);
-      })
-    );
   }
 } 

@@ -7,6 +7,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { TaskService } from '../../../shared/services/task.service';
 import { FormAPI } from '../../../injections';
 import { IFormAPI } from '@jbpm/domain';
+import { UnifiedAuthService } from '../../../core/service/unified-auth.service';
 
 // Interface pour les données du formulaire
 interface FormData {
@@ -89,7 +90,8 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
     private processInstanceService: ProcessInstanceService,
     private containerService: ContainerService,
     private taskService: TaskService,
-    @Inject(FormAPI) private formAPI: IFormAPI
+    @Inject(FormAPI) private formAPI: IFormAPI,
+    private unifiedAuthService: UnifiedAuthService
   ) {}
 
   ngOnInit() {
@@ -114,7 +116,8 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
   private async initializeComponent(): Promise<void> {
     try {
       this.isLoadingContainers = true;
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
 
       // Load containers
       const result = await this.containerService.listContainers();
@@ -155,8 +158,9 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
 
     try {
       this.isLoadingProcesses = true;
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
-      this.processes = await this.containerService.getProcessDefinitions(this.selectedContainerId, defaultHeader);
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      this.processes = await this.containerService.getProcessDefinitions(this.selectedContainerId, authHeaders);
       // Ajout debug
       console.log('DEBUG process definitions:', this.processes);
       if (this.processes.length > 0 && !this.selectedProcessId) {
@@ -180,17 +184,18 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMsg = '';
     try {
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
       // Création de l'instance
       const processInstanceId = await this.processInstanceService.createOneProcessInstance(
         this.selectedContainerId,
         this.selectedProcessId,
         {},
-        defaultHeader
+        authHeaders
       );
       this.processInstanceId = processInstanceId;
       // Récupérer la première tâche utilisateur
-      const userTasks = await this.taskService.getTasksForProcessInstance(processInstanceId, defaultHeader);
+      const userTasks = await this.taskService.getTasksForProcessInstance(processInstanceId, authHeaders);
       const taskList = userTasks['task-summary'] || [];
       const firstUserTask = taskList.find((t: any) => t['task-status'] === 'Reserved' || t['task-status'] === 'Ready' || t['task-status'] === 'En cours');
       if (!firstUserTask) {
@@ -202,15 +207,15 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
       this.userTaskContainerId = firstUserTask['task-container-id'] || this.selectedContainerId;
       
       // Récupérer le formulaire HTML pour ModifComponent
-      const htmlHeader = Object.assign({}, defaultHeader, {
-        'Content-Type': 'text/xml;charset=UTF-8',
+      const htmlHeaders = {
+        'Content-Type': 'text/html',
         'Accept': 'text/html'
-      });
+      };
       
       // Récupérer le formulaire HTML
       if (this.userTaskContainerId && this.userTaskId) {
         console.log('🔍 NewRequestComponent: Récupération du formulaire pour:', this.userTaskContainerId, this.userTaskId);
-        this.taskForm = await this.formAPI.getTaskInstanceForm(this.userTaskContainerId, this.userTaskId, htmlHeader);
+        this.taskForm = await this.formAPI.getTaskInstanceForm(this.userTaskContainerId, this.userTaskId, htmlHeaders);
         console.log('🔍 NewRequestComponent: Formulaire récupéré:', this.taskForm ? this.taskForm.substring(0, 200) + '...' : 'null');
       }
       

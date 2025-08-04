@@ -7,6 +7,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { NewRequestComponent } from '../jbpm-dashboard/new-request/new-request.component';
 import { Subject, takeUntil } from 'rxjs';
 import { ListeInstanceDemandeComponent } from '../jbpm-dashboard/liste-instance-demande/liste-instance-demande.component';
+import { UnifiedAuthService } from '../../core/service/unified-auth.service';
 
 // Interface étendue pour le taux de complétude
 interface ProcessInstanceWithTaux extends ProcessInstanceType {
@@ -89,7 +90,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private processInstanceService: ProcessInstanceService,
     private containerService: ContainerService,
     private taskService: TaskService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private unifiedAuthService: UnifiedAuthService
   ) {}
 
   async ngOnInit() {
@@ -128,26 +130,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private async waitForAuthHeaders(): Promise<void> {
     console.log('Dashboard: Attente des headers d\'authentification...');
     
-    // Attendre jusqu'à 10 secondes que les headers soient configurés
+    // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+    // Attendre jusqu'à 10 secondes que l'authentification soit prête
     for (let i = 0; i < 100; i++) {
-      const defaultHeader = sessionStorage.getItem('defaultHeader');
-      if (defaultHeader) {
-        try {
-          const parsedHeader = JSON.parse(defaultHeader);
-          if (parsedHeader.Authorization) {
-            console.log('Dashboard: Headers d\'authentification trouvés');
-            return;
-          }
-        } catch (error) {
-          console.log('Dashboard: Erreur parsing headers, attente...');
-        }
+      if (this.unifiedAuthService.isLoggedIn()) {
+        console.log('Dashboard: Authentification prête');
+        return;
       }
       
       // Attendre 100ms entre chaque vérification
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
-    console.warn('Dashboard: Aucun header d\'authentification trouvé après 10 secondes');
+    console.warn('Dashboard: Authentification non prête après 10 secondes');
   }
 
   /**

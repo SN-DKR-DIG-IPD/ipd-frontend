@@ -4,6 +4,7 @@ import { ContainerService } from '../../../shared/services/container.service';
 import { TaskService } from '../../../shared/services/task.service';
 import { IDiagramAPI, IFormAPI } from '@jbpm/domain';
 import { DiagramAPI, FormAPI } from '../../../injections';
+import { UnifiedAuthService } from '../../../core/service/unified-auth.service';
 
 interface InstanceRow {
   id: number;
@@ -55,7 +56,8 @@ export class ListeInstanceDemandeComponent implements OnInit {
     private containerService: ContainerService,
     private taskService: TaskService,
     @Inject(DiagramAPI) private diagramAPI: IDiagramAPI,
-    @Inject(FormAPI) private formAPI: IFormAPI
+    @Inject(FormAPI) private formAPI: IFormAPI,
+    private unifiedAuthService: UnifiedAuthService
   ) {}
 
   async ngOnInit() {
@@ -71,9 +73,9 @@ export class ListeInstanceDemandeComponent implements OnInit {
   async testDiagramAPI() {
     try {
       console.log('🧪 Test de connectivité pour l\'API diagramme...');
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
-      const xmlSvgHeader = {
-        ...defaultHeader,
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      const xmlSvgHeaders = {
         'Accept': 'application/xml, text/xml, */*'
       };
       
@@ -86,7 +88,7 @@ export class ListeInstanceDemandeComponent implements OnInit {
            const testResult = await this.diagramAPI.getProcessInstanceDiagram(
              testContainerId,
              999999, // ID fictif pour tester
-             xmlSvgHeader
+             xmlSvgHeaders
            );
           console.log('✅ API diagramme accessible');
         } catch (error) {
@@ -105,18 +107,19 @@ export class ListeInstanceDemandeComponent implements OnInit {
     this.rows = [];
     this.typeOMList = [];
     try {
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
       const containersResult = await this.containerService.listContainers();
       this.containers = containersResult || [];
       // Chargement des instances de tous les containers en parallèle
       const allInstances = await Promise.all(containersResult.map(async (container: any) => {
         const containerId = container['container-id'];
-        const instancesResult = await this.processInstanceService.getAllProcessInstances(containerId, defaultHeader);
+        const instancesResult = await this.processInstanceService.getAllProcessInstances(containerId, authHeaders);
         const instances = instancesResult['process-instance'] || [];
         // Chargement des variables de toutes les instances en parallèle
         const instanceRows = await Promise.all(instances.map(async (instance: any) => {
           try {
-            const variables = await this.processInstanceService.getProcessInstanceVariables(containerId, instance['process-instance-id'], defaultHeader);
+            const variables = await this.processInstanceService.getProcessInstanceVariables(containerId, instance['process-instance-id'], authHeaders);
             const instanceData = instance as any;
                          // DEBUG : log des variables et de l'instance pour comprendre pourquoi date de fin est absente
              console.log('Instance ID:', instance['process-instance-id']);
@@ -345,17 +348,16 @@ export class ListeInstanceDemandeComponent implements OnInit {
     console.log('🔍 Ouverture de la modale de détails pour:', row);
     
     try {
-      // Récupérer le diagramme BPMN
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
-      const xmlSvgHeader = {
-        ...defaultHeader,
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      const xmlSvgHeaders = {
         'Accept': 'application/xml, text/xml, */*'
       };
       
              console.log('🔍 Tentative de récupération du diagramme pour:', {
          containerId: row.containerId,
          processInstanceId: row.id,
-         headers: xmlSvgHeader
+         headers: xmlSvgHeaders
        });
        
        // Vérifier que le containerId est valide
@@ -369,7 +371,7 @@ export class ListeInstanceDemandeComponent implements OnInit {
         try {
           // D'abord, récupérer la liste des processus disponibles dans le container
           console.log('🔍 Récupération de la liste des processus pour le container:', row.containerId);
-          const processesResponse = await this.containerService.displayAllProcesses(row.containerId, xmlSvgHeader);
+          const processesResponse = await this.containerService.displayAllProcesses(row.containerId, xmlSvgHeaders);
           const availableProcesses = processesResponse?.processes || [];
           console.log('📋 Processus disponibles:', availableProcesses.map((p: any) => p['process-id'] || p.id || p.name));
           
@@ -401,7 +403,7 @@ export class ListeInstanceDemandeComponent implements OnInit {
              processInstanceDiagram = await this.diagramAPI.getProcessInstanceDiagram(
                row.containerId,
                row.id,
-               xmlSvgHeader
+               xmlSvgHeaders
              );
              console.log('✅ Diagramme de l\'instance récupéré avec succès');
            } catch (instanceError) {
@@ -413,7 +415,7 @@ export class ListeInstanceDemandeComponent implements OnInit {
                processInstanceDiagram = await this.diagramAPI.getProcessDiagram(
                  row.containerId,
                  processId,
-                 xmlSvgHeader
+                 xmlSvgHeaders
                );
              } else {
                // Fallback: essayer avec le premier processus disponible
@@ -424,7 +426,7 @@ export class ListeInstanceDemandeComponent implements OnInit {
                  processInstanceDiagram = await this.diagramAPI.getProcessDiagram(
                    row.containerId,
                    fallbackProcessId,
-                   xmlSvgHeader
+                   xmlSvgHeaders
                  );
                } else {
                  // Dernier fallback: essayer des noms courants
@@ -435,7 +437,7 @@ export class ListeInstanceDemandeComponent implements OnInit {
                      processInstanceDiagram = await this.diagramAPI.getProcessDiagram(
                        row.containerId,
                        name,
-                       xmlSvgHeader
+                       xmlSvgHeaders
                      );
                      console.log('✅ Diagramme récupéré avec le processus par défaut:', name);
                      break;
@@ -590,19 +592,14 @@ export class ListeInstanceDemandeComponent implements OnInit {
              // Récupérer les informations sur l'utilisateur actuel et son rôle
        const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
        
-       // Récupérer aussi les informations depuis le token JWT pour plus de détails
-       const token = sessionStorage.getItem('defaultHeader');
+       // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+       const token = this.unifiedAuthService.getToken();
        let tokenInfo = {};
        if (token) {
          try {
-           const tokenData = JSON.parse(token);
-           const authHeader = tokenData.Authorization || tokenData.authorization;
-           if (authHeader && authHeader.startsWith('Bearer ')) {
-             const jwtToken = authHeader.substring(7);
-             const payload = JSON.parse(atob(jwtToken.split('.')[1]));
-             tokenInfo = payload;
-             console.log('🔐 Informations du token JWT:', payload);
-           }
+           const payload = JSON.parse(atob(token.split('.')[1]));
+           tokenInfo = payload;
+           console.log('🔐 Informations du token JWT:', payload);
          } catch (error) {
            console.log('⚠️ Impossible de décoder le token JWT');
          }
@@ -813,14 +810,15 @@ export class ListeInstanceDemandeComponent implements OnInit {
     
     try {
       // Récupérer le formulaire comme dans jbpmPortal
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
-      const htmlHeader = Object.assign({}, defaultHeader, {
-        'Content-Type': 'text/xml;charset=UTF-8',
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      const htmlHeaders = {
+        'Content-Type': 'text/html',
         'Accept': 'text/html'
-      });
+      };
       
       console.log('🔍 Récupération du formulaire jBPM...');
-      const taskForm = await this.formAPI.getTaskInstanceForm(containerId, taskId, htmlHeader);
+      const taskForm = await this.formAPI.getTaskInstanceForm(containerId, taskId, htmlHeaders);
       
       console.log('✅ Formulaire récupéré:', taskForm ? taskForm.substring(0, 200) + '...' : 'null');
       

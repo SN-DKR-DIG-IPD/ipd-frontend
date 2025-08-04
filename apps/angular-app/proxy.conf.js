@@ -3,11 +3,11 @@ const PROXY_CONFIG = [
     context: [
       "/jbpm/api"
     ],
-    target: "http://localhost:8080/kie-server/services/rest",
+    target: "http://jbpm.localhost:8082",
     secure: false,
     changeOrigin: true,
     pathRewrite: {
-      "^/jbpm/api": ""
+      "^/jbpm/api": "/kie-server/services/rest"
     },
     logLevel: "debug"
   }

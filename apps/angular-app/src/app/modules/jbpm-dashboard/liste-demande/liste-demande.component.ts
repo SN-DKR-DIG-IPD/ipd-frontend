@@ -6,6 +6,7 @@ import { NewRequestComponent } from '../new-request/new-request.component';
 import { ContainerService } from '../../../shared/services/container.service';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/service/user/auth.service';
+import { UnifiedAuthService } from '../../../core/service/unified-auth.service';
 
 // Interface pour les types de processus
 interface ProcessType {
@@ -50,7 +51,8 @@ export class ListeDemandeComponent implements OnInit, OnDestroy {
     private router: Router, 
     public dialog: MatDialog,
     private containerService: ContainerService,
-    private authService: AuthService
+    private authService: AuthService,
+    private unifiedAuthService: UnifiedAuthService
   ) { }
 
   async ngOnInit() {
@@ -72,12 +74,13 @@ export class ListeDemandeComponent implements OnInit, OnDestroy {
   private async loadProcessTypes(): Promise<void> {
     try {
       this.isLoadingContainers = true;
-      const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
+      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+      const authHeaders = this.unifiedAuthService.getAuthHeaders();
       const containersResult = await this.containerService.listContainers();
       this.containers = containersResult || [];
       let allProcesses: any[] = [];
       for (const container of this.containers) {
-        const { processes } = await this.containerService.displayAllProcesses(container['container-id'], defaultHeader);
+        const { processes } = await this.containerService.displayAllProcesses(container['container-id'], authHeaders);
         // Filtrage dynamique : ne garde que les process principaux démarrables
         allProcesses = allProcesses.concat((processes || []).filter((p: any) => p['is-executable'] === true));
       }
@@ -97,11 +100,12 @@ export class ListeDemandeComponent implements OnInit, OnDestroy {
    */
   private async loadAllProcesses(): Promise<void> {
     this.processTypes = [];
-    const defaultHeader = JSON.parse(sessionStorage.getItem('defaultHeader')!);
+    // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
+    const authHeaders = this.unifiedAuthService.getAuthHeaders();
     for (const container of this.containers) {
       try {
         const containerId = container['container-id'];
-        const processesResult = await this.containerService.displayAllProcesses(containerId, defaultHeader);
+        const processesResult = await this.containerService.displayAllProcesses(containerId, authHeaders);
         const processes = processesResult.processes || [];
         const containerProcesses: ProcessType[] = processes.map((process: any) => ({
           'process-id': process['process-id'],
