@@ -44,52 +44,17 @@ export class KeycloakAuthInterceptor implements HttpInterceptor {
     
     if (token) {
       console.log('🔐 Intercepteur: Token trouvé, ajout du Bearer token');
-      // Définir les headers appropriés selon le type d'appel
-      let contentType = 'application/json';
-      let accept = 'application/json';
       
-      // Pour les formulaires jBPM, utiliser text/html
-      if (req.url.includes('/forms/')) {
-        contentType = 'text/html';
-        accept = 'text/html';
-      }
-      
-      // Pour les appels jBPM API, utiliser XML/JSON
-      if (req.url.includes('/jbpm/api/')) {
-        accept = 'application/xml, application/json';
-      }
-      
+      // ✅ RESPECTER LES HEADERS EXISTANTS ET N'AJOUTER QUE L'AUTH
       const authReq = req.clone({ 
-        headers: req.headers
-          .set('Authorization', `Bearer ${token}`)
-          .set('Content-Type', contentType)
-          .set('Accept', accept)
+        headers: req.headers.set('Authorization', `Bearer ${token}`)
       });
       return next.handle(authReq);
     } else {
       console.warn('⚠️ Intercepteur: Aucun token trouvé, requête sans authentification');
       console.warn('⚠️ Intercepteur: L\'utilisateur doit se connecter d\'abord');
-      // Définir les headers appropriés selon le type d'appel
-      let contentType = 'application/json';
-      let accept = 'application/json';
-      
-      // Pour les formulaires jBPM, utiliser text/html
-      if (req.url.includes('/forms/')) {
-        contentType = 'text/html';
-        accept = 'text/html';
-      }
-      
-      // Pour les appels jBPM API, utiliser XML/JSON
-      if (req.url.includes('/jbpm/api/')) {
-        accept = 'application/xml, application/json';
-      }
-      
-      const authReq = req.clone({ 
-        headers: req.headers
-          .set('Content-Type', contentType)
-          .set('Accept', accept)
-      });
-      return next.handle(authReq);
+      // ✅ RESPECTER LES HEADERS EXISTANTS
+      return next.handle(req);
     }
   }
 } 

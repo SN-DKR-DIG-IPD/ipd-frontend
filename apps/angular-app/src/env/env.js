@@ -10,8 +10,8 @@
       clientId: 'atos-client',
     },
     apiUrl: 'http://localhost:8081',
-    // ✅ CORRIGÉ: Utilise le proxy Angular pour jBPM
-    bpmAPIBaseUrl: '/jbpm/api/',
+    // ✅ CORRIGÉ: Utilise le proxy Angular pour jBPM avec le segment server
+    bpmAPIBaseUrl: '/jbpm/api/server/',
     businessCentralAPIBaseUrl: 'http://localhost:8080/business-central/rest/'
   };
 

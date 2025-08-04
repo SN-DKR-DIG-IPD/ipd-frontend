@@ -7,6 +7,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { TaskService } from '../../../shared/services/task.service';
 import { FormAPI } from '../../../injections';
 import { IFormAPI } from '@jbpm/domain';
+import { HttpClient } from '@angular/common/http';
 import { UnifiedAuthService } from '../../../core/service/unified-auth.service';
 
 // Interface pour les données du formulaire
@@ -91,6 +92,7 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
     private containerService: ContainerService,
     private taskService: TaskService,
     @Inject(FormAPI) private formAPI: IFormAPI,
+    private http: HttpClient,
     private unifiedAuthService: UnifiedAuthService
   ) {}
 
@@ -114,14 +116,13 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
    * Initialize component with data from dialog
    */
   private async initializeComponent(): Promise<void> {
-    try {
-      this.isLoadingContainers = true;
-      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
-      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+          try {
+        this.isLoadingContainers = true;
+        const authHeaders = this.unifiedAuthService.getAuthHeaders();
 
-      // Load containers
-      const result = await this.containerService.listContainers();
-      this.containers = result || [];
+        // Load containers
+        const result = await this.containerService.listContainers();
+        this.containers = result || [];
 
       // Set selected container based on data passed
       if (this.data?.containerId) {
@@ -156,11 +157,10 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
   async onContainerChange(): Promise<void> {
     if (!this.selectedContainerId) return;
 
-    try {
-      this.isLoadingProcesses = true;
-      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
-      const authHeaders = this.unifiedAuthService.getAuthHeaders();
-      this.processes = await this.containerService.getProcessDefinitions(this.selectedContainerId, authHeaders);
+          try {
+        this.isLoadingProcesses = true;
+        const authHeaders = this.unifiedAuthService.getAuthHeaders();
+        this.processes = await this.containerService.getProcessDefinitions(this.selectedContainerId, authHeaders);
       // Ajout debug
       console.log('DEBUG process definitions:', this.processes);
       if (this.processes.length > 0 && !this.selectedProcessId) {
@@ -182,20 +182,19 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
    */
   async startProcessWizard(): Promise<void> {
     this.isLoading = true;
-    this.errorMsg = '';
-    try {
-      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
-      const authHeaders = this.unifiedAuthService.getAuthHeaders();
-      // Création de l'instance
-      const processInstanceId = await this.processInstanceService.createOneProcessInstance(
-        this.selectedContainerId,
-        this.selectedProcessId,
-        {},
-        authHeaders
-      );
-      this.processInstanceId = processInstanceId;
-      // Récupérer la première tâche utilisateur
-      const userTasks = await this.taskService.getTasksForProcessInstance(processInstanceId, authHeaders);
+          this.errorMsg = '';
+      try {
+        const authHeaders = this.unifiedAuthService.getAuthHeaders();
+        // Création de l'instance
+        const processInstanceId = await this.processInstanceService.createOneProcessInstance(
+          this.selectedContainerId,
+          this.selectedProcessId,
+          {},
+          authHeaders
+        );
+        this.processInstanceId = processInstanceId;
+        // Récupérer la première tâche utilisateur
+        const userTasks = await this.taskService.getTasksForProcessInstance(processInstanceId, authHeaders);
       const taskList = userTasks['task-summary'] || [];
       const firstUserTask = taskList.find((t: any) => t['task-status'] === 'Reserved' || t['task-status'] === 'Ready' || t['task-status'] === 'En cours');
       if (!firstUserTask) {
@@ -208,15 +207,40 @@ export class NewRequestComponent implements OnChanges, OnInit, OnDestroy {
       
       // Récupérer le formulaire HTML pour ModifComponent
       const htmlHeaders = {
-        'Content-Type': 'text/html',
+        'Content-Type': 'text/xml;charset=UTF-8',
         'Accept': 'text/html'
       };
       
       // Récupérer le formulaire HTML
       if (this.userTaskContainerId && this.userTaskId) {
         console.log('🔍 NewRequestComponent: Récupération du formulaire pour:', this.userTaskContainerId, this.userTaskId);
-        this.taskForm = await this.formAPI.getTaskInstanceForm(this.userTaskContainerId, this.userTaskId, htmlHeaders);
-        console.log('🔍 NewRequestComponent: Formulaire récupéré:', this.taskForm ? this.taskForm.substring(0, 200) + '...' : 'null');
+        
+        // ✅ CONTOURNER FormAPI ET UTILISER HttpClient DIRECTEMENT
+        console.log('🔍 NewRequestComponent: Récupération du formulaire avec HttpClient');
+        
+        // Convertir HttpHeaders en objet simple
+        const authHeadersObj: any = {};
+        authHeaders.keys().forEach(key => {
+          authHeadersObj[key] = authHeaders.get(key);
+        });
+        
+        // Utiliser la bonne URL avec /server/
+        const formUrl = `/jbpm/api/server/containers/${this.userTaskContainerId!}/forms/tasks/${this.userTaskId!}/content`;
+        console.log('🔍 NewRequestComponent: URL du formulaire:', formUrl);
+        
+        try {
+          const response = await this.http.get(formUrl, { 
+            headers: { ...authHeadersObj, ...htmlHeaders },
+            responseType: 'text'
+          }).toPromise();
+          this.taskForm = response || '';
+          console.log('🔍 NewRequestComponent: Formulaire récupéré via HttpClient:', this.taskForm ? this.taskForm.substring(0, 200) + '...' : 'null');
+        } catch (error) {
+          console.error('❌ NewRequestComponent: Erreur avec HttpClient:', error);
+          this.errorMsg = 'Erreur lors de la récupération du formulaire.';
+          this.isLoading = false;
+          return;
+        }
       }
       
       if (!this.taskForm) {

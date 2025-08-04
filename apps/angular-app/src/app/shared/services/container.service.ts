@@ -18,20 +18,20 @@ export class ContainerService {
 
   // ✅ MÉTHODES OBSERVABLE (nouvelle approche)
   getContainers(): Observable<any> {
-    console.log('🔍 ContainerService: Récupération des containers depuis:', this.apiUrl + 'server/containers');
-    return this.http.get(this.apiUrl + 'server/containers');
+    console.log('🔍 ContainerService: Récupération des containers depuis:', this.apiUrl + 'containers');
+    return this.http.get(this.apiUrl + 'containers');
   }
 
   getProcesses(containerId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}server/containers/${containerId}/processes`);
+    return this.http.get(`${this.apiUrl}containers/${containerId}/processes`);
   }
 
   // ✅ MÉTHODES PROMISE (compatibilité avec l'existant)
   async listContainers(): Promise<any[]> {
-    console.log('🔍 ContainerService: Récupération des containers depuis:', this.apiUrl + 'server/containers');
+    console.log('🔍 ContainerService: Récupération des containers depuis:', this.apiUrl + 'containers');
     
     try {
-      const result = await this.http.get(this.apiUrl + 'server/containers').toPromise();
+      const result = await this.http.get(this.apiUrl + 'containers').toPromise();
       console.log('✅ ContainerService: Containers récupérés:', result);
       console.log('🔍 ContainerService: Type de résultat:', typeof result);
       console.log('🔍 ContainerService: Clés du résultat:', Object.keys(result || {}));
@@ -75,7 +75,7 @@ export class ContainerService {
     console.log('🔍 ContainerService: Récupération des processus pour container:', containerId);
     
     try {
-      const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/processes`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}containers/${containerId}/processes`).toPromise();
       console.log('✅ ContainerService: Processus récupérés:', result);
       
       const resultAny = result as any;
@@ -88,7 +88,7 @@ export class ContainerService {
 
   async getProcessDefinitions(containerId: string, headers?: any): Promise<any[]> {
     try {
-      const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/processes`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}containers/${containerId}/processes`).toPromise();
       const resultAny = result as any;
       return resultAny?.processes || [];
     } catch (error: any) {
