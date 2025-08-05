@@ -350,8 +350,12 @@ export class ListeInstanceDemandeComponent implements OnInit {
     try {
       // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
       const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      
+      // Combiner les headers d'authentification avec les headers XML/SVG
       const xmlSvgHeaders = {
-        'Accept': 'application/xml, text/xml, */*'
+        'Accept': 'application/xml, text/xml, */*',
+        'Authorization': authHeaders.get('Authorization') || '',
+        'Content-Type': 'application/json'
       };
       
              console.log('🔍 Tentative de récupération du diagramme pour:', {
@@ -812,9 +816,12 @@ export class ListeInstanceDemandeComponent implements OnInit {
       // Récupérer le formulaire comme dans jbpmPortal
       // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
       const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      
+      // Combiner les headers d'authentification avec les headers HTML
       const htmlHeaders = {
         'Content-Type': 'text/html',
-        'Accept': 'text/html'
+        'Accept': 'text/html',
+        'Authorization': authHeaders.get('Authorization') || ''
       };
       
       console.log('🔍 Récupération du formulaire jBPM...');

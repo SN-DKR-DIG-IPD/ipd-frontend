@@ -1,0 +1,7 @@
+[33mcommit 2ef70548ce430f0e24f539dd2f5d95b3659c64d5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mIPDGDD-62[m[33m)[m
+Author: Ibrahima LY <ibrahima.ly@atos.net>
+Date:   Mon Aug 4 15:00:44 2025 +0000
+
+    SAUVEGARDE: Suppression de basic-auth.interceptor.ts avant migration vers Keycloak partout
+
+apps/angular-app/src/app/core/service/user/basic-auth.interceptor.ts

@@ -1,0 +1,10 @@
+[33m4f0bb87[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mIPDGDD-62[m[33m)[m 🎉 WORKFLOW JBPM COMPLET FONCTIONNEL - URLs centralisées avec environment.bpmAPIBaseUrl - Toutes les actions (Claim, Start, Save, Complete) fonctionnent avec 201 Created - Authentification Keycloak unifiée - Formulaires jBPM affichés correctement
+[33ma4a927f[m ✅ FORMULAIRE JBPM AFFICHÉ - Correction des headers HTTP pour éviter 406 Not Acceptable
+[33me1a273e[m ✅ MIGRATION KEYCLOAK RÉUSSIE - Application fonctionnelle avec authentification Keycloak partout
+[33m2ef7054[m SAUVEGARDE: Suppression de basic-auth.interceptor.ts avant migration vers Keycloak partout
+[33m0585be8[m SAUVEGARDE: Récupération des containers et instances fonctionnelle - Parsing JSON corrigé
+[33m8bc9f39[m[33m ([m[1;32msauvegarde-sans-proxy[m[33m)[m SAUVEGARDE: Migration sans proxy - authentification fonctionnelle
+[33m56dcf59[m[33m ([m[1;31morigin/IPDGDD-62[m[33m)[m feat: Amélioration complète du dashboard jBPM - Formulaires fonctionnels, diagrammes BPMN, taux de complétude dynamique et interface utilisateur optimisée
+[33me483e86[m Sauvegarde état stable avant refonte logique mapping formulaire dynamique par groupe
+[33m745519a[m Migration du projet actuel vers JBPM front-end
+[33m428a81d[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m Initial commit

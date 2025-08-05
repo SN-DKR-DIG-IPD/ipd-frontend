@@ -1,0 +1,5 @@
+[33m2ef7054[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mIPDGDD-62[m[33m)[m SAUVEGARDE: Suppression de basic-auth.interceptor.ts avant migration vers Keycloak partout
+[33m0585be8[m SAUVEGARDE: Récupération des containers et instances fonctionnelle - Parsing JSON corrigé
+[33m8bc9f39[m[33m ([m[1;32msauvegarde-sans-proxy[m[33m)[m SAUVEGARDE: Migration sans proxy - authentification fonctionnelle
+[33m56dcf59[m[33m ([m[1;31morigin/IPDGDD-62[m[33m)[m feat: Amélioration complète du dashboard jBPM - Formulaires fonctionnels, diagrammes BPMN, taux de complétude dynamique et interface utilisateur optimisée
+[33me483e86[m Sauvegarde état stable avant refonte logique mapping formulaire dynamique par groupe
