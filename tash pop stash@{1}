@@ -1,0 +1,24 @@
+ apps/angular-app/proxy.conf.json                   |   9 [32m+[m
+ apps/angular-app/src/app/app-routing.ts            |  24 [32m+[m[31m-[m
+ apps/angular-app/src/app/app.component.ts          |   2 [32m+[m[31m-[m
+ .../src/app/core/interceptors/auth.interceptor.ts  |  66 [32m+[m[31m--[m
+ .../app/modules/dashboard/dashboard.component.html |  36 [32m+[m[31m-[m
+ .../app/modules/dashboard/dashboard.component.ts   | 165 [32m+++++[m[31m-[m
+ .../app/modules/demand/demand-routing.module.ts    |  10 [32m+[m[31m-[m
+ .../app/modules/demand/task-form.component.html    |  10 [32m+[m[31m-[m
+ .../src/app/modules/demand/task-form.component.ts  | 643 [32m+++++++++++++++++++[m[31m--[m
+ .../jbpm-dashboard/demande/demande.component.html  |  11 [32m+[m[31m-[m
+ .../jbpm-dashboard/demande/demande.component.ts    | 142 [32m+++[m[31m--[m
+ .../jbpm-dashboard/detail/detail.component.html    |   5 [32m+[m[31m-[m
+ .../jbpm-dashboard/detail/detail.component.ts      |  15 [32m+[m
+ .../jbpm-dashboard/jbpm-dashboard.module.ts        |   2 [32m+[m
+ .../liste-instance-demande.component.html          |  94 [32m++[m[31m-[m
+ .../liste-instance-demande.component.ts            | 518 [32m+++++++++++++++[m[31m--[m
+ .../new-request/new-request.component.html         |  88 [32m+[m[31m--[m
+ .../new-request/new-request.component.ts           | 322 [32m+[m[31m----------[m
+ .../src/app/shared/services/container.service.ts   |  30 [32m+[m[31m-[m
+ .../shared/services/process-instance.service.ts    |  82 [32m++[m[31m-[m
+ .../src/app/shared/services/task.service.ts        | 199 [32m++++++[m[31m-[m
+ .../src/app/shared/services/user.service.ts        |  51 [32m+[m[31m-[m
+ .../src/environments/environment.development.ts    |   2 [32m+[m[31m-[m
+ 23 files changed, 1846 insertions(+), 680 deletions(-)

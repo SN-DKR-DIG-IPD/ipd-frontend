@@ -16,7 +16,7 @@ class DiagramRestAdapter implements IDiagramAdapter {
         console.log('🔍 DiagramRestAdapter - Paramètres reçus:', { baseUrl, containerId, processInstanceId });
         
         // Essayer d'abord l'endpoint d'instance (qui peut ne pas exister)
-        const instanceUrl = `${baseUrl}containers/${containerId}/images/processes/instances/${processInstanceId}`;
+        const instanceUrl = `${baseUrl}server/containers/${containerId}/images/processes/instances/${processInstanceId}`;
         console.log('🔍 DiagramRestAdapter - Tentative avec URL instance:', instanceUrl);
         
         try {
@@ -35,7 +35,7 @@ class DiagramRestAdapter implements IDiagramAdapter {
         }
         
         // Fallback vers la définition de processus (plus fiable)
-        const definitionUrl = `${baseUrl}containers/${containerId}/images/processes/evaluation`;
+        const definitionUrl = `${baseUrl}server/containers/${containerId}/images/processes/evaluation`;
         console.log('🔍 DiagramRestAdapter - Fallback vers URL définition:', definitionUrl);
         
         try {
