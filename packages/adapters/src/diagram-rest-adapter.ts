@@ -5,7 +5,7 @@ class DiagramRestAdapter implements IDiagramAdapter {
     }
 
     async getProcessDiagram(baseUrl: string, containerId: string, processId: string, headers: HeadersInit): Promise<string> {
-        const url = `${baseUrl}containers/${containerId}/images/processes/${processId}`;
+        const url = `${baseUrl}server/containers/${containerId}/images/processes/${processId}`;
         console.log('🔍 DiagramRestAdapter - getProcessDiagram - URL:', url);
         const response = await fetch(url, {headers});
 		const textResp = await response.text();

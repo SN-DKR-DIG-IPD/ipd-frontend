@@ -1,8 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UnifiedAuthService } from '../../core/service/unified-auth.service';
+import { BPMDefaultConfigAPI } from '../../injections';
+import type { IDefaultConfigAPI } from '@jbpm/domain';
 
 // ✅ ADAPTATEURS TEMPORAIRES POUR ÉVITER LES ERREURS DE COMPILATION
 class ProcessInstanceRestAdapter {
@@ -110,25 +112,18 @@ class TaskRestAdapter {
 
   async putTaskInstanceState(baseUrl: string, containerId: string, taskInstanceId: number, headers?: HeadersInit, state: string = 'claimed'): Promise<string | null> {
     const mergedHeaders = this.mergeHeaders(headers);
-    console.log('🔍 TaskRestAdapter: Claim de la tâche:', { containerId, taskInstanceId, state });
-    
-    const response = await fetch(`${baseUrl}server/containers/${containerId}/tasks/${taskInstanceId}/states/${state}`,
-      {
-        method: "PUT",
-        headers: mergedHeaders
-      });
-    
-    console.log('🔍 TaskRestAdapter: Statut de la réponse:', response.status, response.statusText);
+    const response = await fetch(`${baseUrl}server/containers/${containerId}/tasks/${taskInstanceId}/states/${state}`, {
+      method: 'PUT',
+      headers: mergedHeaders
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ TaskRestAdapter: Erreur lors du claim:', response.status, errorText);
-      throw new Error(`Erreur lors du claim de la tâche: ${response.status} - ${errorText}`);
+      throw new Error(`Erreur lors du changement d'état de la tâche: ${response.status} - ${errorText}`);
     }
     
-    const jsonResp = await response.text();
-    console.log('✅ TaskRestAdapter: Tâche claimée avec succès');
-    return jsonResp;
+    const textResp = await response.text();
+    return textResp;
   }
 }
 
@@ -147,22 +142,20 @@ class FormRestAdapter {
 
   async getTaskInstanceForm(baseUrl: string, containerId: string, taskInstanceId: number, headers?: HeadersInit): Promise<string> {
     const mergedHeaders = this.mergeHeaders(headers);
-    console.log('🔍 FormRestAdapter: Récupération du formulaire:', { containerId, taskInstanceId });
+    
+    // ✅ Override Accept header pour les formulaires HTML
+    const formHeaders = { ...mergedHeaders, 'Accept': 'text/html' };
     
     const response = await fetch(`${baseUrl}server/containers/${containerId}/forms/tasks/${taskInstanceId}/content`, {
-      headers: mergedHeaders
+      headers: formHeaders
     });
-    
-    console.log('🔍 FormRestAdapter: Statut de la réponse:', response.status, response.statusText);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ FormRestAdapter: Erreur lors de la récupération du formulaire:', response.status, errorText);
       throw new Error(`Erreur lors de la récupération du formulaire: ${response.status} - ${errorText}`);
     }
     
     const textResp = await response.text();
-    console.log('✅ FormRestAdapter: Formulaire récupéré avec succès, longueur:', textResp.length);
     return textResp;
   }
 }
@@ -181,7 +174,8 @@ export class TaskService {
 
   constructor(
     private http: HttpClient,
-    private unifiedAuthService: UnifiedAuthService
+    private unifiedAuthService: UnifiedAuthService,
+    @Inject(BPMDefaultConfigAPI) private bpmDefaultConfigAPI: IDefaultConfigAPI
   ) {
     // ✅ Initialiser les headers par défaut pour les adapters
     this.initializeDefaultHeaders();
@@ -189,22 +183,33 @@ export class TaskService {
 
   // ✅ MÉTHODE POUR INITIALISER LES HEADERS PAR DÉFAUT
   private initializeDefaultHeaders(): void {
-    const token = this.unifiedAuthService.getToken();
-    if (token) {
-      const defaultHeaders: HeadersInit = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      };
-      
+    // ✅ Utiliser BPMDefaultConfigAPI pour les headers par défaut
+    const defaultHeaders = this.bpmDefaultConfigAPI.getDefaultHeaders();
+    if (defaultHeaders && Object.keys(defaultHeaders).length > 0) {
       // ✅ Configurer les headers par défaut pour tous les adapters
       this.processInstanceAdapter.setDefaultHeaders(defaultHeaders);
       this.taskAdapter.setDefaultHeaders(defaultHeaders);
       this.formAdapter.setDefaultHeaders(defaultHeaders);
       
-      console.log('✅ TaskService: Headers par défaut initialisés avec le token');
+      console.log('✅ TaskService: Headers par défaut initialisés avec BPMDefaultConfigAPI');
     } else {
-      console.warn('⚠️ TaskService: Aucun token trouvé pour initialiser les headers par défaut');
+      // ✅ Fallback: utiliser le token d'authentification unifié
+      const token = this.unifiedAuthService.getToken();
+      if (token) {
+        const authHeaders: HeadersInit = {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        };
+        
+        this.processInstanceAdapter.setDefaultHeaders(authHeaders);
+        this.taskAdapter.setDefaultHeaders(authHeaders);
+        this.formAdapter.setDefaultHeaders(authHeaders);
+        
+        console.log('✅ TaskService: Headers par défaut initialisés avec le token unifié');
+      } else {
+        console.warn('⚠️ TaskService: Aucun token trouvé pour initialiser les headers par défaut');
+      }
     }
   }
 
@@ -517,29 +522,103 @@ export class TaskService {
       const taskId = firstUserTask['task-id'];
       const taskContainerId = firstUserTask['task-container-id'] || containerId;
       
-      console.log('✅ TaskService: Tâche trouvée:', { taskId, taskContainerId, status: firstUserTask['task-status'] });
+      console.log('✅ TaskService: Première tâche trouvée:', { taskId, taskContainerId, status: firstUserTask['task-status'] });
       
-      // 3. Claim la tâche si elle n'est pas déjà claimée
+      // 3. Claim automatique de la tâche si nécessaire
+      console.log('📋 TaskService: Étape 3 - Claim automatique de la tâche...');
       if (firstUserTask['task-status'] === 'Ready') {
-        console.log('📋 TaskService: Étape 3 - Claim de la tâche...');
         try {
-          // Récupérer l'utilisateur actuel depuis le token ou la session
-          const currentUser = this.getCurrentUser();
-          await this.claimTask(taskId, taskContainerId, currentUser);
+          await this.claimTask(taskId, taskContainerId);
           console.log('✅ TaskService: Tâche claimée avec succès');
         } catch (claimError: any) {
-          console.warn('⚠️ TaskService: Erreur lors du claim de la tâche:', claimError);
-          // Continuer même si le claim échoue (peut-être déjà claimée)
+          console.warn('⚠️ TaskService: Échec du claim automatique:', claimError);
+          // Continuer même si le claim échoue
         }
-      } else {
-        console.log('ℹ️ TaskService: Tâche déjà claimée ou en cours, pas besoin de claim');
       }
       
-      // 4. Récupérer le formulaire HTML
+      // 4. ✅ RÉCUPÉRER LE FORMULAIRE HTML AVEC BPMDEFAULTCONFIG
       console.log('📋 TaskService: Étape 4 - Récupération du formulaire HTML...');
-      const formHtml = await this.getTaskFormHtml(taskId, taskContainerId);
-      console.log('✅ TaskService: Formulaire HTML récupéré, longueur:', formHtml.length);
       
+      let formHtml: string = '';
+      let formRetrieved = false;
+      
+      // ✅ APPROCHE UNIFIÉE: Utiliser le BPMDefaultConfig pour les headers
+      try {
+        console.log('🔍 TaskService: Récupération du formulaire avec BPMDefaultConfig...');
+        
+        const defaultHeaders = this.bpmDefaultConfigAPI.getDefaultHeaders() || {};
+        const formHeaders: { [key: string]: string } = {
+          'Accept': 'text/html' // ✅ Override pour les formulaires HTML
+        };
+        
+        // Ajouter les headers par défaut de manière sûre (sauf Accept qui est déjà défini)
+        if (typeof defaultHeaders === 'object' && defaultHeaders !== null) {
+          Object.entries(defaultHeaders).forEach(([key, value]) => {
+            if (typeof value === 'string' && key !== 'Accept') { // ✅ Ne pas écraser Accept: 'text/html'
+              formHeaders[key] = value;
+            }
+          });
+        }
+        
+        console.log('🔍 TaskService: Headers pour le formulaire:', formHeaders);
+        
+        const response = await this.http.get(
+          `${this.apiUrl}server/containers/${taskContainerId}/forms/tasks/${taskId}/content`,
+          { 
+            headers: formHeaders,
+            responseType: 'text'
+          }
+        ).toPromise();
+        
+        formHtml = response as string;
+        console.log('✅ TaskService: Formulaire récupéré avec BPMDefaultConfig');
+        formRetrieved = true;
+      } catch (formError: any) {
+        console.warn('⚠️ TaskService: Erreur avec BPMDefaultConfig:', formError);
+      }
+      
+      // ✅ APPROCHE DE FALLBACK: Utiliser les headers d'authentification unifiés
+      if (!formRetrieved) {
+        try {
+          console.log('🔍 TaskService: Tentative avec headers d\'authentification unifiés...');
+          
+          // Utiliser les headers d'authentification sans spread
+          const authHeaders = this.unifiedAuthService.getAuthHeaders();
+          const formHeaders: { [key: string]: string } = {
+            'Accept': 'text/html'
+          };
+          
+          // Ajouter les headers d'authentification de manière sûre
+          if (authHeaders.has('Authorization')) {
+            const authValue = authHeaders.get('Authorization');
+            if (authValue) {
+              formHeaders['Authorization'] = authValue;
+            }
+          }
+          
+          const response = await this.http.get(
+            `${this.apiUrl}server/containers/${taskContainerId}/forms/tasks/${taskId}/content`,
+            { 
+              headers: formHeaders,
+              responseType: 'text'
+            }
+          ).toPromise();
+          
+          formHtml = response as string;
+          console.log('✅ TaskService: Formulaire récupéré avec headers unifiés');
+          formRetrieved = true;
+        } catch (httpFormError: any) {
+          console.warn('⚠️ TaskService: Erreur avec headers unifiés:', httpFormError);
+        }
+      }
+      
+      // Si aucune approche n'a fonctionné
+      if (!formRetrieved) {
+        console.error('❌ TaskService: Impossible de récupérer le formulaire avec toutes les approches');
+        throw new Error('Impossible de récupérer le formulaire. Vérifiez les permissions de l\'utilisateur pour cette tâche.');
+      }
+      
+      console.log('✅ TaskService: Formulaire HTML récupéré, longueur:', formHtml.length);
       return formHtml;
       
     } catch (error: any) {
@@ -553,17 +632,28 @@ export class TaskService {
     try {
       console.log('🔍 TaskService: Démarrage du workflow avec adaptateurs pour', { containerId, processId });
       
-      // Récupérer les headers d'authentification
-      const authHeaders = this.unifiedAuthService.getAuthHeaders();
+      // ✅ UTILISER LE BPMDEFAULTCONFIG POUR LES HEADERS
+      let adapterHeaders: { [key: string]: string } = {};
       
-      // Convertir HttpHeaders en format compatible avec les adaptateurs
-      const adapterHeaders: HeadersInit = {};
-      authHeaders.keys().forEach(key => {
-        const value = authHeaders.get(key);
-        if (value) {
-          adapterHeaders[key] = value;
-        }
-      });
+      const defaultHeaders = this.bpmDefaultConfigAPI.getDefaultHeaders() || {};
+      if (typeof defaultHeaders === 'object' && defaultHeaders !== null) {
+        Object.entries(defaultHeaders).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            adapterHeaders[key] = value;
+          }
+        });
+        console.log('✅ TaskService: Headers récupérés depuis BPMDefaultConfig');
+      } else {
+        // Fallback: utiliser les headers d'authentification unifiés
+        const authHeaders = this.unifiedAuthService.getAuthHeaders();
+        authHeaders.keys().forEach(key => {
+          const value = authHeaders.get(key);
+          if (value) {
+            adapterHeaders[key] = value;
+          }
+        });
+        console.log('✅ TaskService: Headers récupérés depuis UnifiedAuthService');
+      }
       
       // 1. Démarrer le processus avec l'adaptateur
       console.log('📋 TaskService: Étape 1 - Démarrage du processus avec adaptateur...');
@@ -623,11 +713,23 @@ export class TaskService {
         // Continuer même si le diagnostic échoue
       }
       
+      // ✅ NOUVELLE ÉTAPE: Claim automatique si la tâche est Ready
+      if (firstUserTask['task-status'] === 'Ready') {
+        try {
+          console.log('📋 TaskService: Tâche en statut Ready - tentative de claim automatique...');
+          await this.claimTask(taskId, taskContainerId);
+          console.log('✅ TaskService: Tâche claimée avec succès (workflow adaptateurs)');
+        } catch (claimError: any) {
+          console.warn('⚠️ TaskService: Claim automatique échoué (workflow adaptateurs):', claimError);
+          // Continuer même si le claim échoue, l'affichage du formulaire peut échouer avec 401 si non propriétaire
+        }
+      }
+      
       // Vérifier d'abord les détails de la tâche
       try {
         const taskDetails = await this.http.get(
           `${this.apiUrl}server/containers/${taskContainerId}/tasks/${taskId}`,
-          { headers: authHeaders }
+          { headers: adapterHeaders }
         ).toPromise();
         console.log('✅ TaskService: Détails de la tâche récupérés:', taskDetails);
       } catch (taskDetailsError: any) {
@@ -645,18 +747,50 @@ export class TaskService {
         console.log('ℹ️ TaskService: Tâche non claimée, on essaie de récupérer le formulaire directement');
       }
       
-      // 4. ✅ RÉCUPÉRER LE FORMULAIRE HTML AVEC GESTION D'ERREUR AMÉLIORÉE
+      // 4. ✅ RÉCUPÉRER LE FORMULAIRE HTML AVEC BPMDEFAULTCONFIG
       console.log('📋 TaskService: Étape 4 - Récupération du formulaire HTML...');
       
       let formHtml: string = '';
       let formRetrieved = false;
       
-      // ✅ ESSAYER PLUSIEURS APPROCHES POUR RÉCUPÉRER LE FORMULAIRE
+      // ✅ APPROCHE UNIFIÉE: Utiliser le BPMDefaultConfig pour les headers
+      try {
+        console.log('🔍 TaskService: Récupération du formulaire avec BPMDefaultConfig...');
+        
+        const formHeaders: { [key: string]: string } = {
+          'Accept': 'text/html' // ✅ Override pour les formulaires HTML
+        };
+        
+        // Ajouter les headers par défaut de manière sûre (sauf Accept qui est déjà défini)
+        if (typeof defaultHeaders === 'object' && defaultHeaders !== null) {
+          Object.entries(defaultHeaders).forEach(([key, value]) => {
+            if (typeof value === 'string' && key !== 'Accept') { // ✅ Ne pas écraser Accept: 'text/html'
+              formHeaders[key] = value;
+            }
+          });
+        }
+        
+        console.log('🔍 TaskService: Headers pour le formulaire:', formHeaders);
+        
+        const response = await this.http.get(
+          `${this.apiUrl}server/containers/${taskContainerId}/forms/tasks/${taskId}/content`,
+          { 
+            headers: formHeaders,
+            responseType: 'text'
+          }
+        ).toPromise();
+        
+        formHtml = response as string;
+        console.log('✅ TaskService: Formulaire récupéré avec BPMDefaultConfig');
+        formRetrieved = true;
+      } catch (formError: any) {
+        console.warn('⚠️ TaskService: Erreur avec BPMDefaultConfig:', formError);
+      }
       
-      // Approche 1: Avec l'adaptateur
+      // ✅ APPROCHE DE FALLBACK: Utiliser l'adaptateur
       if (!formRetrieved) {
         try {
-          console.log('🔍 TaskService: Tentative 1 - Récupération avec adaptateur...');
+          console.log('🔍 TaskService: Tentative avec adaptateur...');
           formHtml = await this.formAdapter.getTaskInstanceForm(
             this.apiUrl,
             taskContainerId,
@@ -667,53 +801,6 @@ export class TaskService {
           formRetrieved = true;
         } catch (formError: any) {
           console.warn('⚠️ TaskService: Erreur avec l\'adaptateur:', formError);
-        }
-      }
-      
-      // Approche 2: Avec HttpClient direct
-      if (!formRetrieved) {
-        try {
-          console.log('🔍 TaskService: Tentative 2 - Récupération avec HttpClient...');
-          const response = await this.http.get(
-            `${this.apiUrl}server/containers/${taskContainerId}/forms/tasks/${taskId}/content`,
-            { 
-              headers: authHeaders,
-              responseType: 'text'
-            }
-          ).toPromise();
-          
-          formHtml = response as string;
-          console.log('✅ TaskService: Formulaire récupéré avec HttpClient');
-          formRetrieved = true;
-        } catch (httpFormError: any) {
-          console.warn('⚠️ TaskService: Erreur avec HttpClient:', httpFormError);
-        }
-      }
-      
-      // Approche 3: Essayer de récupérer le formulaire sans claim (pour les tâches publiques)
-      if (!formRetrieved) {
-        try {
-          console.log('🔍 TaskService: Tentative 3 - Récupération sans claim (tâche publique)...');
-          
-          // Essayer de récupérer le formulaire avec des headers différents
-          const publicHeaders: any = { ...authHeaders };
-          if (publicHeaders['Authorization']) {
-            delete publicHeaders['Authorization']; // Essayer sans authentification
-          }
-          
-          const response = await this.http.get(
-            `${this.apiUrl}server/containers/${taskContainerId}/forms/tasks/${taskId}/content`,
-            { 
-              headers: publicHeaders,
-              responseType: 'text'
-            }
-          ).toPromise();
-          
-          formHtml = response as string;
-          console.log('✅ TaskService: Formulaire récupéré sans authentification (tâche publique)');
-          formRetrieved = true;
-        } catch (publicFormError: any) {
-          console.warn('⚠️ TaskService: Erreur avec approche publique:', publicFormError);
         }
       }
       

@@ -22,6 +22,23 @@ export class AppComponent implements OnInit {
     this.bpmDefaultConfigAPI.setAPIBaseUrl(environment.bpmAPIBaseUrl);
     this.bpmDefaultConfigAPI.setBusinessCentralAPIBaseUrl(environment.businessCentralAPIBaseUrl);
 
+    // ✅ INJECTION DE L'AUTHENTIFICATION BEARER GLOBALEMENT
+    try {
+      const token = this.unifiedAuthService.getToken();
+      if (token) {
+        console.log('🔐 Configuration de l\'authentification Bearer globale');
+        this.bpmDefaultConfigAPI.setDefaultHeaders({
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        });
+      } else {
+        console.warn('⚠️ Aucun token trouvé pour l\'authentification Bearer');
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la configuration de l\'authentification Bearer:', error);
+    }
+
     // L'authentification et la gestion des rôles sont maintenant gérées par UnifiedAuthService
     // Pas besoin de logique Keycloak supplémentaire ici
     console.log('🚀 Application initialisée avec authentification unifiée');

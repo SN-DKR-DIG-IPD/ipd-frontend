@@ -43,7 +43,7 @@ class TaskRestAdapter implements ITaskAdapter {
     }
 
     async getTaskInstancesHavingThisVariable(baseUrl: string, variableName: string, headers: HeadersInit): Promise<TaskInstances> {
-        const response = await fetch(`${baseUrl}queries/tasks/instances/variables/${variableName}`, {headers});
+        const response = await fetch(`${baseUrl}server/queries/tasks/instances/variables/${variableName}`, {headers});
 		const jsonResp = await response.json();
         return jsonResp;
     }
