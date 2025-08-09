@@ -5,6 +5,7 @@ import { DemandeComponent } from './demande/demande.component';
 import { DetailComponent } from './detail/detail.component';
 import { ModifComponent } from './modif/modif.component';
 import { NewRequestComponent } from './new-request/new-request.component';
+import { ProcessSelectorComponent } from './process-selector/process-selector.component';
 import { ListeDemandeComponent } from './liste-demande/liste-demande.component';
 import { ListeInstanceDemandeComponent } from './liste-instance-demande/liste-instance-demande.component';
 import { FormsModule } from '@angular/forms';
@@ -26,6 +27,7 @@ import { InboxTasksComponent } from './inbox-tasks/inbox-tasks.component';
         DetailComponent,
         ModifComponent,
         NewRequestComponent,
+        ProcessSelectorComponent,
         ListeDemandeComponent,
         ListeInstanceDemandeComponent,
         ReportingComponent,
@@ -36,7 +38,8 @@ import { InboxTasksComponent } from './inbox-tasks/inbox-tasks.component';
     exports: [
         JbpmDashboardComponent,
         ListeInstanceDemandeComponent,
-        DetailComponent
+        DetailComponent,
+        ProcessSelectorComponent
     ],
     imports: [
         CommonModule,

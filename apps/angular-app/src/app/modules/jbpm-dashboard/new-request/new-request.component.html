@@ -1,76 +1,163 @@
 <div class="relative z-10 pt-4 flex items-center justify-center p-6 animation-slide-in">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8 space-y-8 transform transition-all duration-500 hover:shadow-2xl">
+
+  <div
+    class="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-8 space-y-8 transform transition-all duration-500 hover:shadow-2xl"
+    [ngStyle]="{ opacity: 0, animation: 'slideIn 0.5s ease-out forwards' }"
+  >
+    <!-- Bouton de fermeture -->
     <button class="p-4 flex pr-20 hover:bg-gray-100 rounded-full transition-colors">
       <span class="material-icons" (click)="onclose()">close</span>
     </button>
 
-    <!-- Affichage des erreurs -->
-    <div *ngIf="errorMsg" class="bg-red-100 text-red-700 p-3 rounded mb-4">{{ errorMsg }}</div>
-    <!-- Loading -->
-    <div *ngIf="isLoading" class="flex justify-center items-center py-8">
-      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+    <!-- En-tête -->
+    <div class="text-center transform transition-all duration-500 hover:scale-105">
+      <p class="text-2xl font-bold text-gray-900">
+        Type de demande : <span class="text-blue-600">{{processName}}</span>
+      </p>
+      <p class="mt-2 text-gray-600">{{processVersion}}</p>
     </div>
 
-    <!-- Wizard étape 1 : Choix du process -->
-    <ng-container *ngIf="step === 1 && !isLoading">
-      <div class="text-center">
-        <p class="text-2xl font-bold text-gray-900">Démarrer une nouvelle demande</p>
-        <p class="mt-2 text-gray-600">Sélectionnez le type de OM et le processus</p>
-      </div>
-      <form (ngSubmit)="startProcessWizard()" class="space-y-4">
-        <div>
-          <label class="block mb-1 font-semibold">Type de OM</label>
-          <select class="w-full rounded-lg border p-2" [(ngModel)]="selectedContainerId" name="container" (change)="onContainerChange()">
-            <option *ngFor="let c of containers" [value]="c['container-id']">{{ c['container-alias'] || c['container-id'] }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block mb-1 font-semibold">Processus</label>
-          <select class="w-full rounded-lg border p-2" [(ngModel)]="selectedProcessId" name="process">
-            <option *ngFor="let p of processes" [value]="p['process-id']">{{ p['process-name'] }}</option>
-          </select>
-        </div>
-        <div class="flex justify-between space-x-4 mt-6">
-          <button type="submit" [disabled]="!selectedContainerId || !selectedProcessId || isLoading"
-            class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-            Start
-          </button>
-          <button type="button" (click)="exitProcess()"
-            class="ml-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-            Exit
-          </button>
-        </div>
-      </form>
-    </ng-container>
+    <!-- ✅ SECTION DE CHARGEMENT -->
+    <div *ngIf="loading" class="flex flex-col items-center justify-center py-8">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Démarrage du processus et chargement du formulaire...</p>
+    </div>
 
-    <!-- Wizard étape 2 : Formulaire dynamique de la tâche utilisateur -->
-    <ng-container *ngIf="step === 2 && !isLoading">
-      <div class="text-center mb-4">
-        <p class="text-2xl font-bold text-gray-900">Formulaire de la tâche</p>
-        <p class="mt-2 text-gray-600">Remplissez le formulaire pour compléter la tâche</p>
+    <!-- ✅ SECTION D'ERREUR PRINCIPALE -->
+    <div *ngIf="error && !loading" class="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800">Erreur</h3>
+          <div class="mt-2 text-sm text-red-700">
+            <p>{{error}}</p>
+          </div>
+        </div>
       </div>
-      <!-- Affichage du formulaire dynamique -->
-      <div *ngIf="taskForm && !closeModifModal" style="background: yellow; padding: 10px; margin: 10px;">
-        <p>DEBUG: ModifComponent va être affiché</p>
-        <p>taskForm: {{ taskForm ? 'OUI' : 'NON' }}</p>
-        <p>closeModifModal: {{ closeModifModal }}</p>
-        <p>userTaskContainerId: {{ userTaskContainerId }}</p>
-        <p>userTaskId: {{ userTaskId }}</p>
+      <div class="mt-4">
+        <button
+          type="button"
+          (click)="retry()"
+          class="bg-red-100 text-red-800 hover:bg-red-200 px-3 py-2 rounded-md text-sm font-medium mr-2"
+        >
+          Réessayer
+        </button>
+        <button
+          type="button"
+          (click)="startProcessWithoutAutoClaim()"
+          class="bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-2 rounded-md text-sm font-medium"
+          title="Tester le démarrage sans claim automatique"
+        >
+          Tester sans claim
+        </button>
+        <button
+          type="button"
+          (click)="claimTaskManually()"
+          class="bg-green-100 text-green-800 hover:bg-green-200 px-3 py-2 rounded-md text-sm font-medium"
+          title="Claimer manuellement la tâche"
+          *ngIf="taskId && taskContainerId"
+        >
+          Claimer la tâche
+        </button>
+                    <button
+              type="button"
+              (click)="diagnoseClaimIssue()"
+              class="bg-purple-100 text-purple-800 hover:bg-purple-200 px-3 py-2 rounded-md text-sm font-medium"
+              title="Diagnostiquer le problème de claim"
+              *ngIf="taskId && taskContainerId"
+            >
+              🔍 Diagnostic
+            </button>
+            <button
+              type="button"
+              (click)="compareProjectConfigurations()"
+              class="bg-orange-100 text-orange-800 hover:bg-orange-200 px-3 py-2 rounded-md text-sm font-medium"
+              title="Comparer les configurations de projets"
+            >
+              🔍 Comparer Projets
+            </button>
       </div>
-      <app-modif *ngIf="taskForm && !closeModifModal"
-        [form]="taskForm"
-        [closeModal]="closeModifModal"
-        [taskInfo]="{ containerId: userTaskContainerId!, taskId: userTaskId! }"
-        (onCompleteTask)="onTaskCompleted()">
-      </app-modif>
-      <div class="flex justify-end space-x-4 mt-6">
-        <button type="button" (click)="exitProcess()"
-          class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+    </div>
+
+    <!-- ✅ SECTION DU FORMULAIRE DYNAMIQUE -->
+    <div *ngIf="showForm && !loading && !error" class="space-y-6">
+      <div class="border-t border-gray-200 pt-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Formulaire de demande</h3>
+        
+        <!-- ✅ SECTION D'ERREUR DE SOUMISSION -->
+        <div *ngIf="submitError" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-red-800">Erreur de soumission</h3>
+              <div class="mt-2 text-sm text-red-700">
+                <p>{{submitError}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Formulaire HTML dynamique -->
+        <div 
+          class="bg-gray-50 rounded-lg p-6 border border-gray-200 jbpm-form-container"
+          [innerHTML]="sanitizedFormHtml"
+          (click)="handleFormClick($event)"
+        ></div>
+      </div>
+
+      <!-- ✅ BOUTONS D'ACTION POUR LE FORMULAIRE -->
+      <div class="flex justify-end space-x-4 pt-4">
+        <button
+          type="button"
+          (click)="cancelForm()"
+          class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          [disabled]="isSubmitting"
+        >
           Annuler
         </button>
+        <button
+          type="button"
+          (click)="submitForm()"
+          class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          [disabled]="isSubmitting"
+        >
+          <span *ngIf="!isSubmitting">Soumettre</span>
+          <span *ngIf="isSubmitting" class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Soumission en cours...
+          </span>
+        </button>
       </div>
-    </ng-container>
+    </div>
+
+    <!-- ✅ BOUTONS DE NAVIGATION (si pas de formulaire affiché) -->
+    <div *ngIf="!showForm && !loading && !error" class="flex justify-between space-x-4">
+      <button
+        type="button"
+        (click)="startProcess()"
+        class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        Démarrer le processus
+      </button>
+
+      <button
+        type="button"
+        (click)="exitProcess()"
+        class="ml-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        Quitter
+      </button>
+    </div>
   </div>
-</div>
-
-
+</div> 

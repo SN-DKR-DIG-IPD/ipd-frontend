@@ -1,0 +1,134 @@
+<div class="process-selector-container">
+  <!-- Header -->
+  <div class="process-selector-header">
+    <h2 mat-dialog-title>
+      <mat-icon>assignment</mat-icon>
+      Créer une nouvelle demande
+    </h2>
+    <div class="header-actions">
+      <button mat-icon-button (click)="refreshData()" class="refresh-button" title="Rafraîchir les données">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-icon-button (click)="cancel()" class="close-button">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Chargement en cours...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <mat-icon class="error-icon">error</mat-icon>
+    <p class="error-message">{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="loadContainers()">
+      <mat-icon>refresh</mat-icon>
+      Réessayer
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading && !error" class="process-selector-content">
+    <mat-dialog-content>
+      
+      <!-- Container Selection -->
+      <div class="section-container">
+        <h3 class="section-title">
+          <mat-icon>folder</mat-icon>
+          Étape 1 : Sélectionner un type de demande
+        </h3>
+        
+        <div class="container-grid">
+          <div 
+            *ngFor="let container of containers" 
+            class="container-card"
+            [class.selected]="selectedContainer === container"
+            (click)="selectContainer(container)"
+          >
+            <div class="container-card-header">
+              <mat-icon class="container-icon">business</mat-icon>
+              <div class="container-info">
+                <h4 class="container-name">{{ getContainerDisplayName(container) }}</h4>
+                <p class="container-id">{{ container['container-id'] }}</p>
+              </div>
+              <mat-icon *ngIf="selectedContainer === container" class="selected-icon">check_circle</mat-icon>
+            </div>
+            
+            <div class="container-status">
+              <span class="status-badge" [class.active]="container.status === 'STARTED'">
+                {{ container.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Process Selection -->
+      <div *ngIf="selectedContainer" class="section-container">
+        <h3 class="section-title">
+          <mat-icon>playlist_add</mat-icon>
+          Étape 2 : Sélectionner un processus
+        </h3>
+        
+        <div class="process-grid">
+          <div 
+            *ngFor="let process of processes" 
+            class="process-card"
+            [class.selected]="selectedProcess === process"
+            (click)="selectProcess(process)"
+          >
+            <div class="process-card-header">
+              <mat-icon class="process-icon">description</mat-icon>
+              <div class="process-info">
+                <h4 class="process-name">{{ getProcessDisplayName(process) }}</h4>
+                <p class="process-description">{{ getProcessDescription(process) }}</p>
+              </div>
+              <mat-icon *ngIf="selectedProcess === process" class="selected-icon">check_circle</mat-icon>
+            </div>
+            
+            <div class="process-details">
+              <div class="process-detail">
+                <span class="detail-label">ID:</span>
+                <span class="detail-value">{{ process['process-id'] }}</span>
+              </div>
+              <div class="process-detail" *ngIf="process.dynamic">
+                <span class="detail-label">Type:</span>
+                <span class="detail-value">
+                  <mat-icon class="form-icon">dynamic_form</mat-icon>
+                  Formulaire dynamique
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="processes.length === 0" class="no-processes">
+          <mat-icon>info</mat-icon>
+          <p>Aucun processus disponible pour ce container.</p>
+        </div>
+      </div>
+
+    </mat-dialog-content>
+  </div>
+
+  <!-- Actions -->
+  <mat-dialog-actions align="end" *ngIf="!loading && !error">
+    <button mat-button (click)="cancel()">
+      <mat-icon>cancel</mat-icon>
+      Annuler
+    </button>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      [disabled]="!selectedContainer || !selectedProcess"
+      (click)="confirmSelection()"
+    >
+      <mat-icon>arrow_forward</mat-icon>
+      Continuer
+    </button>
+  </mat-dialog-actions>
+</div> 

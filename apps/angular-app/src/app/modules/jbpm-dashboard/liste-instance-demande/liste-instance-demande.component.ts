@@ -121,11 +121,11 @@ export class ListeInstanceDemandeComponent implements OnInit {
           try {
             const variables = await this.processInstanceService.getProcessInstanceVariables(containerId, instance['process-instance-id'], authHeaders);
             const instanceData = instance as any;
-                         // DEBUG : log des variables et de l'instance pour comprendre pourquoi date de fin est absente
-             console.log('Instance ID:', instance['process-instance-id']);
+            // DEBUG : log des variables et de l'instance pour comprendre pourquoi date de fin est absente
+            console.log('Instance ID:', instance['process-instance-id']);
              console.log('Process Name:', instance['process-name']);
-             console.log('variables:', variables);
-             console.log('instanceData:', instanceData);
+            console.log('variables:', variables);
+            console.log('instanceData:', instanceData);
             const dateDebut = variables['dateDebut'] || instanceData['start-date'] || '';
             const dateFin = variables['dateFin'] || instanceData['end-date'] || '';
             const approbateur = variables['approbateur'] || variables['approbation'] || instanceData['initiator'] || '';

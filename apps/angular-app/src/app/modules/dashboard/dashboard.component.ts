@@ -5,6 +5,7 @@ import { TaskService } from '../../shared/services/task.service';
 import { ProcessInstanceType } from '@jbpm/domain';
 import { MatDialog } from '@angular/material/dialog';
 import { NewRequestComponent } from '../jbpm-dashboard/new-request/new-request.component';
+import { ProcessSelectorComponent } from '../jbpm-dashboard/process-selector/process-selector.component';
 import { Subject, takeUntil } from 'rxjs';
 import { ListeInstanceDemandeComponent } from '../jbpm-dashboard/liste-instance-demande/liste-instance-demande.component';
 import { UnifiedAuthService } from '../../core/service/unified-auth.service';
@@ -333,24 +334,55 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Open new request dialog
+   * Open new request dialog with process selection
    */
   ouvrirDialogNouvelleDemande(): void {
-    const dialogRef = this.dialog.open(NewRequestComponent, {
-      width: '600px',
-      data: { typeOM: this.selectedContainerId }
+    console.log('🔍 Dashboard: Ouverture du sélecteur de processus');
+    
+    // ✅ ÉTAPE 1: Ouvrir le sélecteur de processus
+    const processSelectorRef = this.dialog.open(ProcessSelectorComponent, {
+      width: '90%',
+      maxWidth: '1000px',
+      data: {}
     });
 
-    dialogRef.afterClosed()
+    // Écouter la sélection d'un processus
+    processSelectorRef.afterClosed()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(result => {
-        if (result === 'created') {
-          setTimeout(() => {
-            this.loadProcesses();
-            if (this.listeInstanceDemande) {
-              this.listeInstanceDemande.reload();
+      .subscribe(async (selectedProcessData) => {
+        if (selectedProcessData) {
+          console.log('✅ Dashboard: Processus sélectionné:', selectedProcessData);
+          
+          // ✅ ÉTAPE 2: Ouvrir le composant de nouvelle demande avec les paramètres
+          const newRequestRef = this.dialog.open(NewRequestComponent, {
+            width: '90%',
+            maxWidth: '1000px',
+            data: {
+              containerId: selectedProcessData.containerId,
+              containerName: selectedProcessData.containerName,
+              processId: selectedProcessData.processId,
+              processName: selectedProcessData.processName,
+              processVersion: selectedProcessData.processVersion,
+              process: selectedProcessData.process
             }
-          }, 700);
+          });
+
+          newRequestRef.afterClosed()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(result => {
+              if (result && result.success) {
+                console.log('✅ Dashboard: Nouvelle demande créée avec succès');
+                // Recharger les données
+                setTimeout(() => {
+                  this.loadProcesses();
+                  if (this.listeInstanceDemande) {
+                    this.listeInstanceDemande.reload();
+                  }
+                }, 700);
+              }
+            });
+        } else {
+          console.log('❌ Dashboard: Aucun processus sélectionné');
         }
       });
   }
