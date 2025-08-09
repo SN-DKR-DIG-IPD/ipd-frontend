@@ -13,10 +13,10 @@ export class DiagramService {
   constructor(private http: HttpClient) { }
 
   getProcessDiagram(containerId: string, processId: string): Observable<string> {
-    return this.http.get(`${this.apiUrl}containers/${containerId}/processes/${processId}/diagram`, { responseType: 'text' });
+    return this.http.get(`${this.apiUrl}server/containers/${containerId}/processes/${processId}/diagram`, { responseType: 'text' });
   }
 
   getProcessInstanceDiagram(containerId: string, processInstanceId: number): Observable<string> {
-    return this.http.get(`${this.apiUrl}containers/${containerId}/processes/instances/${processInstanceId}/diagram`, { responseType: 'text' });
+    return this.http.get(`${this.apiUrl}server/containers/${containerId}/processes/instances/${processInstanceId}/diagram`, { responseType: 'text' });
   }
 } 

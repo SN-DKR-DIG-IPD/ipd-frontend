@@ -3,24 +3,33 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UnifiedAuthService } from '../../core/service/unified-auth.service';
+
 // ✅ ADAPTATEURS TEMPORAIRES POUR ÉVITER LES ERREURS DE COMPILATION
 class ProcessInstanceRestAdapter {
-  async createOneProcessInstance(baseUrl: string, containerId: string, processId: string, bodyJSON: Object, headers: HeadersInit): Promise<number> {
-    console.log('🔍 ProcessInstanceRestAdapter: Démarrage du processus avec URL:', `${baseUrl}containers/${containerId}/processes/${processId}/instances`);
+  private defaultHeaders: HeadersInit = {};
+
+  setDefaultHeaders(headers: HeadersInit): void {
+    this.defaultHeaders = headers;
+  }
+
+  private mergeHeaders(customHeaders?: HeadersInit): HeadersInit {
+    const defaults = this.defaultHeaders || {};
+    const merged = { ...defaults, ...(customHeaders || {}) };
+    return merged;
+  }
+
+  async createOneProcessInstance(baseUrl: string, containerId: string, processId: string, bodyJSON: Object, headers?: HeadersInit): Promise<number> {
+    const mergedHeaders = this.mergeHeaders(headers);
+    console.log('🔍 ProcessInstanceRestAdapter: Démarrage du processus avec URL:', `${baseUrl}server/containers/${containerId}/processes/${processId}/instances`);
     
-    const response = await fetch(`${baseUrl}containers/${containerId}/processes/${processId}/instances`, {
+    const response = await fetch(`${baseUrl}server/containers/${containerId}/processes/${processId}/instances`, {
       method: "POST",
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json, text/plain, */*'
-      },
+      headers: mergedHeaders,
       body: JSON.stringify(bodyJSON),
       redirect: 'follow' // Suivre les redirections automatiquement
     });
 
     console.log('🔍 ProcessInstanceRestAdapter: Statut de la réponse:', response.status, response.statusText);
-    console.log('🔍 ProcessInstanceRestAdapter: Headers de réponse:', response.headers);
 
     // Vérifier si la réponse est OK
     if (!response.ok) {
@@ -63,12 +72,6 @@ class ProcessInstanceRestAdapter {
 
     if (!processInstanceId || isNaN(processInstanceId)) {
       console.error('❌ ProcessInstanceRestAdapter: Impossible d\'extraire l\'ID de l\'instance de processus');
-      console.error('❌ ProcessInstanceRestAdapter: Réponse complète:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-        body: responseText
-      });
       throw new Error(`Impossible d'extraire l'ID de l'instance de processus. Réponse: ${responseText}`);
     }
 
@@ -76,12 +79,10 @@ class ProcessInstanceRestAdapter {
     return processInstanceId;
   }
 
-  async getAllTasksOfOneProcessInstance(baseUrl: string, processInstanceId: number, headers: HeadersInit): Promise<any> {
-    const response = await fetch(`${baseUrl}queries/tasks/instances/process/${processInstanceId}`, {
-      headers: {
-        ...headers,
-        'Accept': 'application/json'
-      }
+  async getAllTasksOfOneProcessInstance(baseUrl: string, processInstanceId: number, headers?: HeadersInit): Promise<any> {
+    const mergedHeaders = this.mergeHeaders(headers);
+    const response = await fetch(`${baseUrl}server/queries/tasks/instances/process/${processInstanceId}`, {
+      headers: mergedHeaders
     });
     
     if (!response.ok) {
@@ -95,17 +96,26 @@ class ProcessInstanceRestAdapter {
 }
 
 class TaskRestAdapter {
-  async putTaskInstanceState(baseUrl: string, containerId: string, taskInstanceId: number, headers: HeadersInit, state: string = 'claimed'): Promise<string | null> {
+  private defaultHeaders: HeadersInit = {};
+
+  setDefaultHeaders(headers: HeadersInit): void {
+    this.defaultHeaders = headers;
+  }
+
+  private mergeHeaders(customHeaders?: HeadersInit): HeadersInit {
+    const defaults = this.defaultHeaders || {};
+    const merged = { ...defaults, ...(customHeaders || {}) };
+    return merged;
+  }
+
+  async putTaskInstanceState(baseUrl: string, containerId: string, taskInstanceId: number, headers?: HeadersInit, state: string = 'claimed'): Promise<string | null> {
+    const mergedHeaders = this.mergeHeaders(headers);
     console.log('🔍 TaskRestAdapter: Claim de la tâche:', { containerId, taskInstanceId, state });
     
-    const response = await fetch(`${baseUrl}containers/${containerId}/tasks/${taskInstanceId}/states/${state}`,
+    const response = await fetch(`${baseUrl}server/containers/${containerId}/tasks/${taskInstanceId}/states/${state}`,
       {
         method: "PUT",
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json, text/plain, */*'
-        }
+        headers: mergedHeaders
       });
     
     console.log('🔍 TaskRestAdapter: Statut de la réponse:', response.status, response.statusText);
@@ -123,14 +133,24 @@ class TaskRestAdapter {
 }
 
 class FormRestAdapter {
-  async getTaskInstanceForm(baseUrl: string, containerId: string, taskInstanceId: number, headers: HeadersInit): Promise<string> {
+  private defaultHeaders: HeadersInit = {};
+
+  setDefaultHeaders(headers: HeadersInit): void {
+    this.defaultHeaders = headers;
+  }
+
+  private mergeHeaders(customHeaders?: HeadersInit): HeadersInit {
+    const defaults = this.defaultHeaders || {};
+    const merged = { ...defaults, ...(customHeaders || {}) };
+    return merged;
+  }
+
+  async getTaskInstanceForm(baseUrl: string, containerId: string, taskInstanceId: number, headers?: HeadersInit): Promise<string> {
+    const mergedHeaders = this.mergeHeaders(headers);
     console.log('🔍 FormRestAdapter: Récupération du formulaire:', { containerId, taskInstanceId });
     
-    const response = await fetch(`${baseUrl}containers/${containerId}/forms/tasks/${taskInstanceId}/content`, {
-      headers: {
-        ...headers,
-        'Accept': 'text/html, application/xhtml+xml, */*'
-      }
+    const response = await fetch(`${baseUrl}server/containers/${containerId}/forms/tasks/${taskInstanceId}/content`, {
+      headers: mergedHeaders
     });
     
     console.log('🔍 FormRestAdapter: Statut de la réponse:', response.status, response.statusText);
@@ -162,16 +182,45 @@ export class TaskService {
   constructor(
     private http: HttpClient,
     private unifiedAuthService: UnifiedAuthService
-  ) { }
+  ) {
+    // ✅ Initialiser les headers par défaut pour les adapters
+    this.initializeDefaultHeaders();
+  }
+
+  // ✅ MÉTHODE POUR INITIALISER LES HEADERS PAR DÉFAUT
+  private initializeDefaultHeaders(): void {
+    const token = this.unifiedAuthService.getToken();
+    if (token) {
+      const defaultHeaders: HeadersInit = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      
+      // ✅ Configurer les headers par défaut pour tous les adapters
+      this.processInstanceAdapter.setDefaultHeaders(defaultHeaders);
+      this.taskAdapter.setDefaultHeaders(defaultHeaders);
+      this.formAdapter.setDefaultHeaders(defaultHeaders);
+      
+      console.log('✅ TaskService: Headers par défaut initialisés avec le token');
+    } else {
+      console.warn('⚠️ TaskService: Aucun token trouvé pour initialiser les headers par défaut');
+    }
+  }
+
+  // ✅ MÉTHODE POUR METTRE À JOUR LES HEADERS PAR DÉFAUT
+  private updateDefaultHeaders(): void {
+    this.initializeDefaultHeaders();
+  }
 
   // ✅ MÉTHODES OBSERVABLE (nouvelle approche)
   getTasks(): Observable<any> {
-    return this.http.get(this.apiUrl + 'queries/tasks/instances/pot-owners');
+    return this.http.get(`${this.apiUrl}server/queries/tasks/instances/pot-owners`);
   }
 
   getTaskForm(containerId: string, taskId: number): Observable<any> {
     return this.http.get(
-      `${this.apiUrl}containers/${containerId}/forms/tasks/${taskId}/content`,
+      `${this.apiUrl}server/containers/${containerId}/forms/tasks/${taskId}/content`,
       { responseType: 'text' }
     );
   }
@@ -179,7 +228,7 @@ export class TaskService {
   // ✅ MÉTHODES PROMISE (compatibilité avec l'existant)
   async getTasksForProcessInstance(processInstanceId: number, headers?: any): Promise<any> {
     try {
-      const result = await this.http.get(`${this.apiUrl}queries/tasks/instances/process/${processInstanceId}`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/queries/tasks/instances/process/${processInstanceId}`).toPromise();
       return result;
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la récupération des tâches:', error);
@@ -189,7 +238,7 @@ export class TaskService {
 
   async getUserTasks(headers?: any): Promise<any> {
     try {
-      const result = await this.http.get(`${this.apiUrl}queries/tasks/user`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/queries/tasks/user`).toPromise();
       return result;
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la récupération des tâches utilisateur:', error);
@@ -199,7 +248,7 @@ export class TaskService {
 
   async getUserPotentialTasks(headers?: any): Promise<any> {
     try {
-      const result = await this.http.get(`${this.apiUrl}queries/tasks/user/potentials`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/queries/tasks/user/potentials`).toPromise();
       return result;
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la récupération des tâches potentielles:', error);
@@ -209,7 +258,7 @@ export class TaskService {
 
   async getTaskDetails(taskId: number, containerId: string, headers?: any): Promise<any> {
     try {
-      const result = await this.http.get(`${this.apiUrl}containers/${containerId}/tasks/${taskId}`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/tasks/${taskId}`).toPromise();
       return result;
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la récupération des détails de tâche:', error);
@@ -219,7 +268,7 @@ export class TaskService {
 
   async getTaskInputVariables(taskId: number, containerId: string, headers?: any): Promise<any> {
     try {
-      const result = await this.http.get(`${this.apiUrl}containers/${containerId}/tasks/${taskId}/contents/input`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/contents/input`).toPromise();
       return result || {};
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la récupération des variables d\'entrée:', error);
@@ -229,7 +278,7 @@ export class TaskService {
 
   async getTaskOutputVariables(taskId: number, containerId: string, headers?: any): Promise<any> {
     try {
-      const result = await this.http.get(`${this.apiUrl}containers/${containerId}/tasks/${taskId}/contents/output`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/contents/output`).toPromise();
       return result || {};
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la récupération des variables de sortie:', error);
@@ -264,7 +313,7 @@ export class TaskService {
       // Essayer d'abord l'endpoint de soumission de formulaire
       try {
         await this.http.post(
-          `${this.apiUrl}containers/${containerId}/tasks/${taskId}/contents/output`, 
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/contents/output`, 
           data,
           { headers: authHeaders }
         ).toPromise();
@@ -273,7 +322,7 @@ export class TaskService {
         
         // Ensuite, essayer de compléter la tâche
         await this.http.put(
-          `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/completed`, 
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/completed`, 
           {},
           { headers: authHeaders }
         ).toPromise();
@@ -284,7 +333,7 @@ export class TaskService {
         
         // Si la soumission échoue, essayer directement la complétion
         await this.http.put(
-          `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/completed`, 
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/completed`, 
           data,
           { headers: authHeaders }
         ).toPromise();
@@ -293,13 +342,6 @@ export class TaskService {
       }
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la complétion de la tâche:', error);
-      console.error('🔍 TaskService: Détails de l\'erreur:', {
-        status: error.status,
-        statusText: error.statusText,
-        url: error.url,
-        message: error.message,
-        headers: error.headers
-      });
       throw error;
     }
   }
@@ -325,7 +367,7 @@ export class TaskService {
       const claimData = userId ? { 'user': userId } : {};
       
       await this.http.put(
-        `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/claimed`, 
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/claimed`, 
         claimData,
         { headers: httpHeaders }
       ).toPromise();
@@ -339,7 +381,7 @@ export class TaskService {
 
   async releaseTask(taskId: number, containerId: string, headers?: any): Promise<void> {
     try {
-      await this.http.put(`${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/released`, {}).toPromise();
+      await this.http.put(`${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/released`, {}).toPromise();
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la libération de la tâche:', error);
       throw error;
@@ -349,7 +391,7 @@ export class TaskService {
   async getTaskFormHtml(taskId: number, containerId: string): Promise<string> {
     try {
       const result = await this.http.get(
-        `${this.apiUrl}containers/${containerId}/forms/tasks/${taskId}/content`,
+        `${this.apiUrl}server/containers/${containerId}/forms/tasks/${taskId}/content`,
         { responseType: 'text' }
       ).toPromise();
       return result as string;
@@ -362,7 +404,7 @@ export class TaskService {
   // ✅ NOUVELLES MÉTHODES POUR L'APPROCHE DYNAMIQUE
   async getProcessList(containerId: string): Promise<any[]> {
     try {
-      const result = await this.http.get(`${this.apiUrl}containers/${containerId}/processes`).toPromise();
+      const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/processes`).toPromise();
       return (result as any)?.processes || [];
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la récupération de la liste des processus:', error);
@@ -373,7 +415,7 @@ export class TaskService {
   async startProcess(containerId: string, processId: string, variables: any = {}): Promise<number> {
     try {
       const result = await this.http.post(
-        `${this.apiUrl}containers/${containerId}/processes/${processId}/instances`,
+        `${this.apiUrl}server/containers/${containerId}/processes/${processId}/instances`,
         variables
       ).toPromise();
       return result as number;
@@ -584,7 +626,7 @@ export class TaskService {
       // Vérifier d'abord les détails de la tâche
       try {
         const taskDetails = await this.http.get(
-          `${this.apiUrl}containers/${taskContainerId}/tasks/${taskId}`,
+          `${this.apiUrl}server/containers/${taskContainerId}/tasks/${taskId}`,
           { headers: authHeaders }
         ).toPromise();
         console.log('✅ TaskService: Détails de la tâche récupérés:', taskDetails);
@@ -633,7 +675,7 @@ export class TaskService {
         try {
           console.log('🔍 TaskService: Tentative 2 - Récupération avec HttpClient...');
           const response = await this.http.get(
-            `${this.apiUrl}containers/${taskContainerId}/forms/tasks/${taskId}/content`,
+            `${this.apiUrl}server/containers/${taskContainerId}/forms/tasks/${taskId}/content`,
             { 
               headers: authHeaders,
               responseType: 'text'
@@ -660,7 +702,7 @@ export class TaskService {
           }
           
           const response = await this.http.get(
-            `${this.apiUrl}containers/${taskContainerId}/forms/tasks/${taskId}/content`,
+            `${this.apiUrl}server/containers/${taskContainerId}/forms/tasks/${taskId}/content`,
             { 
               headers: publicHeaders,
               responseType: 'text'
@@ -828,7 +870,7 @@ export class TaskService {
       
       // Vérifier les détails de la tâche
       const taskDetails = await this.http.get(
-        `${this.apiUrl}containers/${containerId}/tasks/${taskId}`,
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}`,
         { headers: authHeaders }
       ).toPromise();
       
@@ -851,7 +893,7 @@ export class TaskService {
       // 1. Vérifier le statut actuel de la tâche
       console.log('📋 TaskService: Étape 1 - Vérification du statut de la tâche...');
       const taskDetails = await this.http.get(
-        `${this.apiUrl}containers/${containerId}/tasks/${taskId}`,
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}`,
         { headers: authHeaders }
       ).toPromise();
       
@@ -871,7 +913,7 @@ export class TaskService {
       if (Object.keys(formData).length === 0) {
         console.log('ℹ️ TaskService: Aucune donnée de formulaire, complétion sans données');
         await this.http.put(
-          `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/completed`,
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/completed`,
           {},
           { headers: authHeaders }
         ).toPromise();
@@ -880,7 +922,7 @@ export class TaskService {
         console.log('🔍 TaskService: Données à envoyer:', formData);
         
         await this.http.put(
-          `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/completed`,
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/completed`,
           formData,
           { headers: authHeaders }
         ).toPromise();
@@ -907,7 +949,7 @@ export class TaskService {
       // 1. Vérifier les détails de la tâche
       console.log('📋 TaskService: Étape 1 - Vérification des détails de la tâche...');
       const taskDetails = await this.http.get(
-        `${this.apiUrl}containers/${containerId}/tasks/${taskId}`,
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}`,
         { headers: authHeaders }
       ).toPromise();
       
@@ -939,7 +981,7 @@ export class TaskService {
       try {
         // Essayer d'abord l'endpoint des propriétaires
         const ownerTasks = await this.http.get(
-          `${this.apiUrl}queries/tasks/instances/owners`,
+          `${this.apiUrl}server/queries/tasks/instances/owners`,
           { headers: authHeaders }
         ).toPromise();
         console.log('✅ TaskService: Tâches des propriétaires:', ownerTasks);
@@ -960,7 +1002,7 @@ export class TaskService {
         try {
           // Essayer l'endpoint des administrateurs
           const adminTasks = await this.http.get(
-            `${this.apiUrl}queries/tasks/instances/admins`,
+            `${this.apiUrl}server/queries/tasks/instances/admins`,
             { headers: authHeaders }
           ).toPromise();
           console.log('✅ TaskService: Tâches des administrateurs:', adminTasks);
@@ -1012,7 +1054,7 @@ export class TaskService {
         console.log(`🔍 TaskService: Tentative de claim avec le rôle de l'utilisateur: ${role}`);
         
         const result = await this.http.put(
-          `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/claimed`,
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/claimed`,
           { 'group': role }, // JBPM attend 'group' mais on envoie le rôle Keycloak
           { headers: authHeaders }
         ).toPromise();
@@ -1036,59 +1078,59 @@ export class TaskService {
       console.log('🔍 TaskService: Tentative de claim sans rôle spécifique (tâche publique)...');
       
       const result = await this.http.put(
-        `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/claimed`,
-        {},
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/claimed`,
+        {}, // Pas de groupe spécifique
         { headers: authHeaders }
       ).toPromise();
       
       console.log('✅ TaskService: Claim réussi sans rôle spécifique (tâche publique)');
-      return { success: true, role: 'none', result: result, source: 'public_task' };
+      return { success: true, role: 'public', result: result, source: 'public_task' };
       
     } catch (error: any) {
-      console.error('❌ TaskService: Échec du claim sans rôle spécifique (tâche publique):', error);
+      console.warn('⚠️ TaskService: Échec du claim sans rôle spécifique:', error.status, error.statusText);
+    }
+    
+    // ✅ SI RIEN NE FONCTIONNE, ESSAYER AVEC L'UTILISATEUR SPÉCIFIQUE
+    try {
+      console.log('🔍 TaskService: Tentative de claim avec l\'utilisateur spécifique...');
       
-      // ✅ ESSAYER AVEC UTILISATEUR SPÉCIFIQUE
-      try {
-        console.log('🔍 TaskService: Tentative de claim avec utilisateur spécifique...');
-        const currentUser = this.getCurrentUser();
-        
+      const currentUser = this.getCurrentUser();
+      if (currentUser) {
         const result = await this.http.put(
-          `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/claimed`,
-          { 'user': currentUser },
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/claimed`,
+          { 'user': currentUser }, // Essayer avec l'utilisateur spécifique
           { headers: authHeaders }
         ).toPromise();
         
-        console.log('✅ TaskService: Claim réussi avec utilisateur spécifique');
+        console.log('✅ TaskService: Claim réussi avec l\'utilisateur spécifique');
         return { success: true, user: currentUser, result: result, source: 'specific_user' };
+      }
+    } catch (error: any) {
+      console.warn('⚠️ TaskService: Échec du claim avec l\'utilisateur spécifique:', error.status, error.statusText);
+    }
+    
+    // ✅ DERNIER ESSAI: RÔLES PAR DÉFAUT
+    const defaultRoles = ['PM', 'pm', 'employe', 'employee', 'admin', 'administrator'];
+    for (const role of defaultRoles) {
+      try {
+        console.log(`🔍 TaskService: Tentative de claim avec le rôle par défaut: ${role}`);
         
-      } catch (userError: any) {
-        console.error('❌ TaskService: Échec du claim avec utilisateur spécifique:', userError);
+        const result = await this.http.put(
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/claimed`,
+          { 'group': role },
+          { headers: authHeaders }
+        ).toPromise();
         
-        // ✅ DERNIÈRE TENTATIVE : ESSAYER AVEC DES RÔLES PAR DÉFAUT
-        const defaultRoles = ['PM', 'employe', 'employee', 'admin', 'user'];
-        console.log('🔍 TaskService: Tentative avec des rôles par défaut:', defaultRoles);
+        console.log(`✅ TaskService: Claim réussi avec le rôle par défaut: ${role}`);
+        return { success: true, role: role, result: result, source: 'default_role' };
         
-        for (const role of defaultRoles) {
-          try {
-            console.log(`🔍 TaskService: Tentative de claim avec le rôle par défaut: ${role}`);
-            
-            const result = await this.http.put(
-              `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/claimed`,
-              { 'group': role },
-              { headers: authHeaders }
-            ).toPromise();
-            
-            console.log(`✅ TaskService: Claim réussi avec le rôle par défaut: ${role}`);
-            return { success: true, role: role, result: result, source: 'default_roles' };
-            
-          } catch (error: any) {
-            console.warn(`⚠️ TaskService: Échec du claim avec le rôle par défaut ${role}:`, error.status, error.statusText);
-          }
-        }
-        
-        throw new Error(`Impossible de claimer la tâche avec aucun rôle. Rôles utilisateur: [${userRoles.join(', ')}]. Dernière erreur: ${error.status} ${error.statusText}`);
+      } catch (error: any) {
+        console.warn(`⚠️ TaskService: Échec du claim avec le rôle par défaut ${role}:`, error.status, error.statusText);
       }
     }
+    
+    console.error('❌ TaskService: Aucune méthode de claim n\'a fonctionné');
+    throw new Error('Impossible de claim la tâche avec aucune méthode');
   }
 
   // ✅ MÉTHODE DE DIAGNOSTIC APPROFONDI POUR LE CLAIM
@@ -1105,7 +1147,7 @@ export class TaskService {
       // 2. Récupérer les détails de la tâche
       console.log('🔍 TaskService: Récupération des détails de la tâche...');
       const taskDetails = await this.http.get(
-        `${this.apiUrl}containers/${containerId}/tasks/${taskId}`,
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}`,
         { headers: authHeaders }
       ).toPromise();
       
@@ -1127,7 +1169,7 @@ export class TaskService {
       console.log('🔍 TaskService: Test de claim avec le rôle PM...');
       try {
         const claimResult = await this.http.put(
-          `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/claimed`,
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/claimed`,
           { 'group': 'PM' },
           { headers: authHeaders }
         ).toPromise();
@@ -1147,7 +1189,7 @@ export class TaskService {
         console.log('🔍 TaskService: Test de claim sans groupe (tâche publique)...');
         try {
           const publicClaimResult = await this.http.put(
-            `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/claimed`,
+            `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/claimed`,
             {}, // Pas de groupe spécifié
             { headers: authHeaders }
           ).toPromise();
@@ -1160,7 +1202,7 @@ export class TaskService {
           try {
             const currentUser = this.getCurrentUser();
             const userClaimResult = await this.http.put(
-              `${this.apiUrl}containers/${containerId}/tasks/${taskId}/states/claimed`,
+              `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/claimed`,
               { 'user': currentUser },
               { headers: authHeaders }
             ).toPromise();
@@ -1176,7 +1218,7 @@ export class TaskService {
       try {
         // Endpoint réel : tâches des propriétaires
         const ownerTasks = await this.http.get(
-          `${this.apiUrl}queries/tasks/instances/owners`,
+          `${this.apiUrl}server/queries/tasks/instances/owners`,
           { headers: authHeaders }
         ).toPromise();
         console.log('✅ TaskService: Tâches des propriétaires:', ownerTasks);
@@ -1186,7 +1228,7 @@ export class TaskService {
         try {
           // Endpoint alternatif : tâches des administrateurs
           const adminTasks = await this.http.get(
-            `${this.apiUrl}queries/tasks/instances/admins`,
+            `${this.apiUrl}server/queries/tasks/instances/admins`,
             { headers: authHeaders }
           ).toPromise();
           console.log('✅ TaskService: Tâches des administrateurs:', adminTasks);
@@ -1196,7 +1238,7 @@ export class TaskService {
           try {
             // Dernier essai : toutes les tâches (sans filtre)
             const allTasks = await this.http.get(
-              `${this.apiUrl}queries/tasks/instances`,
+              `${this.apiUrl}server/queries/tasks/instances`,
               { headers: authHeaders }
             ).toPromise();
             console.log('✅ TaskService: Toutes les tâches disponibles:', allTasks);
@@ -1269,12 +1311,12 @@ export class TaskService {
       console.log('🔍 TaskService: Récupération des processus...');
       
       const workingProcesses = await this.http.get(
-        `${this.apiUrl}containers/${workingContainerId}/processes`,
+        `${this.apiUrl}server/containers/${workingContainerId}/processes`,
         { headers: authHeaders }
       ).toPromise();
       
       const failingProcesses = await this.http.get(
-        `${this.apiUrl}containers/${failingContainerId}/processes`,
+        `${this.apiUrl}server/containers/${failingContainerId}/processes`,
         { headers: authHeaders }
       ).toPromise();
       
@@ -1285,12 +1327,12 @@ export class TaskService {
       console.log('🔍 TaskService: Récupération des tâches...');
       
       const workingTasks = await this.http.get(
-        `${this.apiUrl}queries/tasks/instances/owners`,
+        `${this.apiUrl}server/queries/tasks/instances/owners`,
         { headers: authHeaders }
       ).toPromise();
       
       const failingTasks = await this.http.get(
-        `${this.apiUrl}queries/tasks/instances/owners`,
+        `${this.apiUrl}server/queries/tasks/instances/owners`,
         { headers: authHeaders }
       ).toPromise();
       
@@ -1307,12 +1349,12 @@ export class TaskService {
       // 4. Comparer les détails d'une tâche de chaque projet
       if (workingTaskIds.length > 0 && failingTaskIds.length > 0) {
         const workingTaskDetails = await this.http.get(
-          `${this.apiUrl}containers/${workingContainerId}/tasks/${workingTaskIds[0]}`,
+          `${this.apiUrl}server/containers/${workingContainerId}/tasks/${workingTaskIds[0]}`,
           { headers: authHeaders }
         ).toPromise();
         
         const failingTaskDetails = await this.http.get(
-          `${this.apiUrl}containers/${failingContainerId}/tasks/${failingTaskIds[0]}`,
+          `${this.apiUrl}server/containers/${failingContainerId}/tasks/${failingTaskIds[0]}`,
           { headers: authHeaders }
         ).toPromise();
         

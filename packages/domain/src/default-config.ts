@@ -37,4 +37,18 @@ class DefaultConfig implements IDefaultConfigAPI {
 	}
 }
 
+// ✅ Singleton pour BPMDefaultConfigAPI
+let bpmDefaultConfigInstance: DefaultConfig | null = null;
+
+export function createBPMDefaultConfigAPI(defaultConfigAdapter: IDefaultConfigAdapter): DefaultConfig {
+	if (!bpmDefaultConfigInstance) {
+		bpmDefaultConfigInstance = new DefaultConfig(defaultConfigAdapter);
+	}
+	return bpmDefaultConfigInstance;
+}
+
+export function getBPMDefaultConfigAPI(): DefaultConfig | null {
+	return bpmDefaultConfigInstance;
+}
+
 export { DefaultConfig };
