@@ -368,6 +368,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           const newRequestRef = this.dialog.open(NewRequestComponent, {
             width: '90%',
             maxWidth: '1000px',
+            panelClass: 'no-surface-dialog',
+            backdropClass: 'blurred-backdrop',
             data: {
               containerId: selectedProcessData.containerId,
               containerName: selectedProcessData.containerName,

@@ -44,6 +44,11 @@ export class NewRequestComponent implements OnChanges, OnInit {
   formData: any = {};
   isSubmitting: boolean = false;
   submitError: string = '';
+  // UI state for footer buttons
+  canClaim = true;
+  canRelease = true;
+  canStart = true;
+  canComplete = true;
 
   constructor(
     private taskService: TaskService,
@@ -373,6 +378,13 @@ export class NewRequestComponent implements OnChanges, OnInit {
   onclose(): void {
     this.dialogRef.close();
   }
+
+  // Aliases for new template bindings
+  onClose(): void { this.onclose(); }
+  claim(): void { this.claimTaskManually(); }
+  release(): void { /* Optionally call taskService.releaseTask if needed */ }
+  start(): void { this.startTask(); }
+  complete(): void { this.submitForm(); }
 
   // ✅ MÉTHODE AMÉLIORÉE POUR GÉRER LES ÉVÉNEMENTS DU FORMULAIRE
   handleFormClick(event: Event): void {

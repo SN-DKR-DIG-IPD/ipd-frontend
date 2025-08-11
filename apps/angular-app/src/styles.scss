@@ -1,3 +1,22 @@
+/* Dialog surface and backdrop tweaks for a more fluid modal */
+.no-surface-dialog .mdc-dialog__surface,
+.no-surface-dialog .mat-mdc-dialog-surface,
+.no-surface-dialog .mat-dialog-container,
+.no-surface-dialog .mdc-dialog__container,
+.no-surface-dialog .mdc-dialog__scrim {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.blurred-backdrop {
+  backdrop-filter: blur(4px);
+  background-color: rgba(17, 24, 39, 0.25) !important; /* gray-900/25 */
+}
+
+.no-surface-dialog .mat-mdc-dialog-container .mdc-dialog__content {
+  padding: 0 !important;
+}
 /* You can add global styles to this file, and also import other style files */
 @tailwind base;
 @tailwind components;
