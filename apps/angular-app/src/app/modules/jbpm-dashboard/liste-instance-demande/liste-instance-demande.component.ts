@@ -27,6 +27,7 @@ interface InstanceRow {
   templateUrl: './liste-instance-demande.component.html',
 })
 export class ListeInstanceDemandeComponent implements OnInit {
+  private static readonly STORAGE_KEY_SELECTED_CONTAINER = 'jbpm.selectedContainerId';
   isLoading = false;
   errorMsg = '';
   rows: InstanceRow[] = [];
@@ -39,6 +40,7 @@ export class ListeInstanceDemandeComponent implements OnInit {
   typeOMList: string[] = [];
   filteredRows: InstanceRow[] = [];
   containers: any[] = [];
+  selectedContainerId: string = '';
 
   @Output() openDetailRequest = new EventEmitter<any>();
 
@@ -61,7 +63,15 @@ export class ListeInstanceDemandeComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    await this.reload();
+    // Restaurer le container sélectionné depuis le stockage local si disponible
+    try {
+      const saved = localStorage.getItem(ListeInstanceDemandeComponent.STORAGE_KEY_SELECTED_CONTAINER);
+      if (saved) {
+        this.selectedContainerId = saved;
+      }
+    } catch {}
+
+    await this.reload(this.selectedContainerId || undefined);
     
     // Test de connectivité pour le diagramme
     await this.testDiagramAPI();
@@ -100,26 +110,38 @@ export class ListeInstanceDemandeComponent implements OnInit {
     }
   }
 
-  async reload() {
+  async reload(containerId?: string) {
     if (this.isLoading) return; // Empêche les rechargements multiples
     this.isLoading = true;
     this.errorMsg = '';
     this.rows = [];
     this.typeOMList = [];
     try {
-      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
-      const authHeaders = this.unifiedAuthService.getAuthHeaders();
       const containersResult = await this.containerService.listContainers();
       this.containers = containersResult || [];
-      // Chargement des instances de tous les containers en parallèle
-      const allInstances = await Promise.all(containersResult.map(async (container: any) => {
+      // Déterminer le container sélectionné
+      const selected = containerId || this.selectedContainerId || (this.containers[0]?.['container-id'] || '');
+      this.selectedContainerId = selected;
+      // Sauvegarder la sélection pour restauration après refresh
+      try {
+        if (this.selectedContainerId) {
+          localStorage.setItem(ListeInstanceDemandeComponent.STORAGE_KEY_SELECTED_CONTAINER, this.selectedContainerId);
+        }
+      } catch {}
+      if (!this.selectedContainerId) {
+        this.isLoading = false;
+        this.errorMsg = 'Aucun processus sélectionné. Sélectionnez un container pour afficher les demandes.';
+        return;
+      }
+      // Chargement des instances uniquement pour le container sélectionné
+      const allInstances = await Promise.all(this.containers.filter((c: any)=> c['container-id']===this.selectedContainerId).map(async (container: any) => {
         const containerId = container['container-id'];
-        const instancesResult = await this.processInstanceService.getAllProcessInstances(containerId, authHeaders);
+        const instancesResult = await this.processInstanceService.getAllProcessInstances(containerId);
         const instances = instancesResult['process-instance'] || [];
         // Chargement des variables de toutes les instances en parallèle
         const instanceRows = await Promise.all(instances.map(async (instance: any) => {
           try {
-            const variables = await this.processInstanceService.getProcessInstanceVariables(containerId, instance['process-instance-id'], authHeaders);
+            const variables = await this.processInstanceService.getProcessInstanceVariables(containerId, instance['process-instance-id']);
             const instanceData = instance as any;
             // DEBUG : log des variables et de l'instance pour comprendre pourquoi date de fin est absente
             console.log('Instance ID:', instance['process-instance-id']);
@@ -483,87 +505,22 @@ export class ListeInstanceDemandeComponent implements OnInit {
         const username = currentUser.preferred_username || currentUser.name || '';
         console.log('👤 Utilisateur actuel:', username);
         
-        // Récupérer les tâches de l'utilisateur pour cette instance
-        console.log('🔍 Récupération des tâches de l\'utilisateur pour l\'instance:', row.id);
-        
-        // Essayer d'abord de récupérer les tâches assignées à l'utilisateur
-                 try {
-           console.log('🔍 Appel à getUserTasks() pour l\'utilisateur actuel...');
-           const userTasksResult = await this.taskService.getUserTasks();
-           console.log('📋 Résultat brut de getUserTasks():', userTasksResult);
-           
-           const userTasks = userTasksResult['task-summary'] || [];
-           console.log('📋 Tâches de l\'utilisateur (total):', userTasks.length);
-           console.log('📋 Détails des tâches utilisateur:', userTasks);
-          
-                     // Filtrer les tâches qui appartiennent à cette instance
-           console.log('🔍 Filtrage des tâches pour l\'instance:', row.id);
-           console.log('🔍 Comparaison avec les task-proc-inst-id des tâches utilisateur...');
-           
-           const instanceTasks = userTasks.filter((task: any) => {
-             const taskInstanceId = task['task-proc-inst-id'];
-             const matches = taskInstanceId === row.id;
-             console.log(`🔍 Tâche ${task['task-id']}: task-proc-inst-id=${taskInstanceId}, row.id=${row.id}, match=${matches}`);
-             return matches;
-           });
-           
-           console.log('📋 Tâches de l\'utilisateur pour cette instance:', instanceTasks);
-          
-                     if (instanceTasks.length > 0) {
-             // Prendre la première tâche assignée à l'utilisateur
-             const userTask = instanceTasks[0];
-             realTaskId = userTask['task-id'];
-             realTaskName = userTask['task-name'];
-             console.log('✅ Tâche assignée à l\'utilisateur trouvée:', { realTaskId, realTaskName });
-             console.log('📋 Détails de la tâche:', userTask);
-           } else {
-             console.log('⚠️ Aucune tâche assignée à l\'utilisateur, recherche de tâches disponibles...');
-            
-                         // Fallback : récupérer toutes les tâches de l'instance
-             console.log('🔄 Fallback: Appel à getTasksForProcessInstance pour l\'instance', row.id);
-             const tasksResult = await this.taskService.getTasksForProcessInstance(row.id);
-             console.log('📋 Résultat brut de getTasksForProcessInstance:', tasksResult);
-             
-             const tasks = tasksResult['task-summary'] || [];
-             console.log('📋 Toutes les tâches de l\'instance (total):', tasks.length);
-             console.log('📋 Détails des tâches:', tasks);
-            
-            if (Array.isArray(tasks) && tasks.length > 0) {
-              // Filtrer les tâches actives (Ready, InProgress)
-              const activeTasks = tasks.filter((task: any) => 
-                task['task-status'] === 'Ready' || task['task-status'] === 'InProgress'
-              );
-              
-              console.log('📋 Tâches actives de l\'instance:', activeTasks);
-              
-              if (activeTasks.length > 0) {
-                // Prendre la première tâche active
-                const firstActiveTask = activeTasks[0];
-                realTaskId = firstActiveTask['task-id'];
-                realTaskName = firstActiveTask['task-name'];
-                console.log('✅ Tâche active trouvée:', { realTaskId, realTaskName });
-              }
-            }
-          }
-                 } catch (userTasksError) {
-           console.log('❌ ERREUR getUserTasks():', userTasksError);
-           console.log('⚠️ Impossible de récupérer les tâches de l\'utilisateur, fallback vers toutes les tâches');
-          
-          // Fallback : récupérer toutes les tâches de l'instance
+        // Récupérer d'abord les tâches potential owner pour cette instance
+        const potTasks = await this.taskService.getPotentialOwnerTasksForInstance(row.id);
+        if (potTasks.length > 0) {
+          realTaskId = potTasks[0]['task-id'];
+          realTaskName = potTasks[0]['task-name'];
+          console.log('✅ Tâche potential owner trouvée:', { realTaskId, realTaskName });
+        } else {
+          // Fallback : toutes les tâches de l'instance et prendre la première active
           const tasksResult = await this.taskService.getTasksForProcessInstance(row.id);
           const tasks = tasksResult['task-summary'] || [];
-          
-          if (Array.isArray(tasks) && tasks.length > 0) {
-            const activeTasks = tasks.filter((task: any) => 
-              task['task-status'] === 'Ready' || task['task-status'] === 'InProgress'
-            );
-            
-            if (activeTasks.length > 0) {
-              const firstActiveTask = activeTasks[0];
-              realTaskId = firstActiveTask['task-id'];
-              realTaskName = firstActiveTask['task-name'];
-              console.log('✅ Tâche active trouvée (fallback):', { realTaskId, realTaskName });
-            }
+          const activeTasks = tasks.filter((task: any) => 
+            task['task-status'] === 'Ready' || task['task-status'] === 'InProgress'
+          );
+          if (activeTasks.length > 0) {
+            realTaskId = activeTasks[0]['task-id'];
+            realTaskName = activeTasks[0]['task-name'];
           }
         }
       } catch (error) {
@@ -863,13 +820,18 @@ export class ListeInstanceDemandeComponent implements OnInit {
     console.log('✅ Tâche complétée:', event);
     this.closeDetailModal();
     
-    // Mettre à jour le taux de complétude pour cette instance
-    if (event && event.containerId && event.taskId) {
-      this.updateCompletionRate(event.containerId, event.taskId);
+    // Mettre à jour le taux de complétude pour cette instance et recharger uniquement le container concerné
+    const cid = event?.containerId || this.selectedContainerId;
+    const piid = Number(event?.processInstanceId);
+    if (cid && !isNaN(piid)) {
+      this.selectedContainerId = cid;
+      this.reload(cid);
+    } else if (cid) {
+      this.selectedContainerId = cid;
+      this.reload(cid);
+    } else {
+      this.reload();
     }
-    
-    // Recharger les données
-    this.reload();
   }
 
   /**

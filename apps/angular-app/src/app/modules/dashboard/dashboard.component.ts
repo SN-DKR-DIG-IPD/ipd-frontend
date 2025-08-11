@@ -40,6 +40,7 @@ interface PaginationState {
   styleUrls: ['./dashboard.component.scss'],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  private static readonly STORAGE_KEY_SELECTED_CONTAINER = 'jbpm.selectedContainerId';
   // Pagination
   pagination: PaginationState = {
     currentPage: 1,
@@ -117,10 +118,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.isLoadingContainers = true;
       await this.loadContainers();
       
-      if (this.containers.length > 0) {
-        this.selectedContainerId = this.containers[0]['container-id'];
-        await this.loadProcesses();
+      // Restaurer le container sélectionné si sauvegardé
+      try {
+        const saved = localStorage.getItem(DashboardComponent.STORAGE_KEY_SELECTED_CONTAINER);
+        if (saved) {
+          this.selectedContainerId = saved;
+        } else if (this.containers.length > 0) {
+          this.selectedContainerId = this.containers[0]['container-id'];
+        }
+      } catch {
+        if (this.containers.length > 0) {
+          this.selectedContainerId = this.containers[0]['container-id'];
+        }
       }
+
+      await this.loadProcesses();
     } catch (error) {
       console.error('Erreur lors de l\'initialisation du dashboard:', error);
     } finally {
@@ -159,10 +171,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       await this.loadAllProcessesForIndicators();
       this.calculateIndicators();
       
-      if (this.containers.length > 0) {
-        this.selectedContainerId = this.containers[0]['container-id'];
-        await this.loadProcesses();
-      }
+      // Ne pas écraser la sélection ici; elle est restaurée dans initializeDashboard
     } catch (error) {
       console.error('Erreur lors du chargement des containers:', error);
       throw error;
@@ -250,6 +259,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
    */
   onTypeOMChange(containerId: string): void {
     this.selectedContainerId = containerId;
+    // Sauvegarder la sélection
+    try { localStorage.setItem(DashboardComponent.STORAGE_KEY_SELECTED_CONTAINER, this.selectedContainerId); } catch {}
     this.applyFilter();
   }
 
@@ -372,13 +383,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
             .subscribe(result => {
               if (result && result.success) {
                 console.log('✅ Dashboard: Nouvelle demande créée avec succès');
-                // Recharger les données
-                setTimeout(() => {
-                  this.loadProcesses();
-                  if (this.listeInstanceDemande) {
-                    this.listeInstanceDemande.reload();
-                  }
-                }, 700);
+                // Recharger les données pour le container concerné
+                if (result.containerId) {
+                  this.selectedContainerId = result.containerId;
+                  try { localStorage.setItem(DashboardComponent.STORAGE_KEY_SELECTED_CONTAINER, this.selectedContainerId); } catch {}
+                }
+                setTimeout(async () => {
+                  await this.loadProcesses();
+                  this.listeInstanceDemande?.reload(this.selectedContainerId);
+                }, 1200);
               }
             });
         } else {

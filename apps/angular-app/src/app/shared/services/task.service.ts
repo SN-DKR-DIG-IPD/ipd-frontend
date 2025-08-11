@@ -223,6 +223,97 @@ export class TaskService {
     return this.http.get(`${this.apiUrl}server/queries/tasks/instances/pot-owners`);
   }
 
+  /**
+   * Récupère les tâches dont l'utilisateur courant est potential owner, filtrées par instance
+   */
+  async getPotentialOwnerTasksForInstance(processInstanceId: number): Promise<any[]> {
+    try {
+      const url = `${this.apiUrl}server/queries/tasks/instances/pot-owners?page=0&pageSize=50`;
+      const res: any = await this.http.get(url).toPromise();
+      const list: any[] = res?.['task-summary'] || [];
+      return list.filter((t: any) => Number(t['task-proc-inst-id']) === Number(processInstanceId));
+    } catch (e) {
+      console.warn('⚠️ getPotentialOwnerTasksForInstance: fallback vide', e);
+      return [];
+    }
+  }
+
+  /**
+   * Récupère les tâches pour un container donné, avec filtres status et potOwner
+   * - containerId: requis
+   * - statuses: ex. ['Ready','Reserved','InProgress']
+   * - potOwner: nom d'utilisateur courant (facultatif)
+   * Retourne un tableau mappé pour alimenter un tableau UI
+   */
+  async getTasksForContainer(
+    containerId: string,
+    statuses: string[] = ['Ready', 'Reserved', 'InProgress'],
+    potOwner?: string
+  ): Promise<Array<{
+    taskId: number;
+    processInstanceId: number;
+    containerId: string;
+    taskName: string;
+    status: string;
+    createdDate: string;
+    dueDate: string;
+    actualOwner: string;
+  }>> {
+    if (!containerId) return [];
+
+    // Construire les query params selon KIE server
+    const params: { [k: string]: string | string[] } = {
+      containerId,
+      // Plusieurs status supportés
+      status: statuses,
+      pageSize: '50',
+      page: '0',
+      sort_by: 'task-id',
+      sort_order: 'desc'
+    } as any;
+    if (potOwner) (params as any).potOwner = potOwner;
+
+    const url = `${this.apiUrl}server/queries/tasks/instances`;
+    const httpParams = new URLSearchParams();
+    Object.keys(params).forEach((key) => {
+      const value: any = (params as any)[key];
+      if (Array.isArray(value)) {
+        value.forEach((v) => httpParams.append(key, String(v)));
+      } else if (value !== undefined && value !== null && String(value).length > 0) {
+        httpParams.append(key, String(value));
+      }
+    });
+
+    const result: any = await this.http
+      .get(url + `?${httpParams.toString()}`)
+      .toPromise();
+
+    const list: any[] = result?.['task-summary'] || result || [];
+
+    const toLabel = (s: string): string => {
+      if (!s) return '';
+      const map: any = { Ready: 'Prêt', Reserved: 'Réservé', InProgress: 'En cours', Completed: 'Terminé' };
+      return map[s] || s;
+    };
+
+    const formatDate = (val: any): string => {
+      if (!val) return '';
+      const d = new Date(val['java.util.Date'] ?? val);
+      return isNaN(d.getTime()) ? '' : d.toLocaleDateString('fr-FR');
+    };
+
+    return list.map((t: any) => ({
+      taskId: Number(t['task-id']) || 0,
+      processInstanceId: Number(t['task-proc-inst-id']) || 0,
+      containerId: String(t['task-container-id'] || containerId || ''),
+      taskName: String(t['task-name'] || ''),
+      status: toLabel(String(t['task-status'] || '')),
+      createdDate: formatDate(t['task-created-on']),
+      dueDate: formatDate(t['task-expiration-time']),
+      actualOwner: String(t['task-actual-owner'] || '')
+    }));
+  }
+
   getTaskForm(containerId: string, taskId: number): Observable<any> {
     return this.http.get(
       `${this.apiUrl}server/containers/${containerId}/forms/tasks/${taskId}/content`,

@@ -429,21 +429,33 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
         });
     };
 
-    (window as any).completeTask = () => {
+    (window as any).completeTask = async () => {
       const formData = getFormData();
-      const url = `${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/completed`;
-      
-      makeRequest(url, 'PUT', formData)
-        .then(() => {
-          showNotification('Tâche complétée avec succès !', 'success');
-          setTimeout(() => {
-            const event = new CustomEvent('taskCompleted', { detail: taskInfo });
-            window.dispatchEvent(event);
-          }, 1000);
-        })
-        .catch((error: any) => {
-          showNotification('Erreur lors de la complétion: ' + error.message, 'error');
-        });
+      try {
+        // Save outputs
+        await makeRequest(`${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/contents/output`, 'PUT', formData);
+        // Complete
+        await makeRequest(`${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/completed`, 'PUT');
+
+        // Récupérer le containerId canonique et le processInstanceId de la tâche pour rafraîchir la liste côté parent
+        let canonicalContainerId = taskInfo.containerId;
+        let processInstanceId: number | null = null;
+        try {
+          const detail: any = await makeRequest(`${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}`, 'GET');
+          canonicalContainerId = detail?.['task-container-id'] || canonicalContainerId;
+          processInstanceId = Number(detail?.['task-proc-inst-id']);
+        } catch {}
+
+        showNotification('Tâche complétée avec succès !', 'success');
+        setTimeout(() => {
+          const event = new CustomEvent('taskCompleted', { detail: { containerId: canonicalContainerId, taskId: taskInfo.taskId, processInstanceId } });
+          window.dispatchEvent(event);
+          // Emettre vers le parent Angular également
+          (this as any).onCompleteTask.emit({ containerId: canonicalContainerId, taskId: taskInfo.taskId, processInstanceId });
+        }, 700);
+      } catch (error: any) {
+        showNotification('Erreur lors de la complétion: ' + error.message, 'error');
+      }
     };
 
     console.log('Fonctions jBPM injectées avec succès dans window global (approche alternative)');
