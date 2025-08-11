@@ -99,9 +99,11 @@ export class NavbarComponent implements OnInit {
   }
 
   navigateTo(route: string): void {
+    // Routes effectives sous /demand/... et /dashboard (sans /home)
     sessionStorage.setItem('selectedMenu', '1');
     sessionStorage.setItem('selectedSubMenu', route);
-    this.router.navigate(['/' + route]).then(() => {
+    const target = route.startsWith('/') ? route : '/' + route;
+    this.router.navigate([target]).then(() => {
       const deepestRoute = this.getDeepestRoute(this.activatedRoute);
       const title = deepestRoute.snapshot.data['title'];
       this.pageTitle = title ? title : 'Tableau de bord';

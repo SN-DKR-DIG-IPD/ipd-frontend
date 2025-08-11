@@ -70,12 +70,12 @@ export class TimelineComponent implements OnInit {
     const urlMap: { [key: number]: string } = {
       1: this.router.url.includes('omnationale') ? '/demand/omnationale' :
         this.router.url.includes('ominternationale') ? '/demand/ominternationale' : '',
-      2: '/home/demand/companions',
-      3: '/home/demand/perdiem',
-      4: '/home/demand/vehicle-reservation',
-      5: '/home/demand/ticket-reservation',
-      6: '/home/demand/shuttle-reservation',
-      7: '/home/demand/summary'
+      2: '/demand/companions',
+      3: '/demand/perdiem',
+      4: '/demand/vehicle-reservation',
+      5: '/demand/ticket-reservation',
+      6: '/demand/shuttle-reservation',
+      7: '/demand/summary'
     };
 
     const destination = urlMap[step];

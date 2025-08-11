@@ -315,10 +315,10 @@ export class TaskService {
       // Utiliser les headers d'authentification par défaut
       const authHeaders = this.unifiedAuthService.getAuthHeaders();
       
-      // Essayer d'abord l'endpoint de soumission de formulaire
+      // Essayer d'abord l'endpoint de soumission de formulaire (PUT recommandé)
       try {
-        await this.http.post(
-          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/contents/output`, 
+        await this.http.put(
+          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/contents/output`,
           data,
           { headers: authHeaders }
         ).toPromise();
@@ -389,6 +389,51 @@ export class TaskService {
       await this.http.put(`${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/released`, {}).toPromise();
     } catch (error: any) {
       console.error('❌ TaskService: Erreur lors de la libération de la tâche:', error);
+      throw error;
+    }
+  }
+
+  async startTask(taskId: number, containerId: string, headers?: any): Promise<void> {
+    try {
+      const authHeaders = headers || this.unifiedAuthService.getAuthHeaders();
+      await this.http.put(
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/started`,
+        {},
+        { headers: authHeaders }
+      ).toPromise();
+      console.log('✅ TaskService: Tâche démarrée avec succès');
+    } catch (error: any) {
+      console.warn('⚠️ TaskService: Erreur lors du démarrage de la tâche (peut être ignorée si non requis):', error);
+      throw error;
+    }
+  }
+
+  async stopTask(taskId: number, containerId: string, headers?: any): Promise<void> {
+    try {
+      const authHeaders = headers || this.unifiedAuthService.getAuthHeaders();
+      await this.http.put(
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/stopped`,
+        {},
+        { headers: authHeaders }
+      ).toPromise();
+      console.log('✅ TaskService: Tâche arrêtée avec succès');
+    } catch (error: any) {
+      console.warn('⚠️ TaskService: Erreur lors de l\'arrêt de la tâche:', error);
+      throw error;
+    }
+  }
+
+  async saveTaskData(taskId: number, containerId: string, data: any = {}, headers?: any): Promise<void> {
+    try {
+      const authHeaders = headers || this.unifiedAuthService.getAuthHeaders();
+      await this.http.put(
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/contents/output`,
+        data,
+        { headers: authHeaders }
+      ).toPromise();
+      console.log('✅ TaskService: Données de tâche sauvegardées');
+    } catch (error: any) {
+      console.error('❌ TaskService: Erreur lors de la sauvegarde des données:', error);
       throw error;
     }
   }
@@ -520,7 +565,7 @@ export class TaskService {
       }
       
       const taskId = firstUserTask['task-id'];
-      const taskContainerId = firstUserTask['task-container-id'] || containerId;
+      let taskContainerId = firstUserTask['task-container-id'] || containerId;
       
       console.log('✅ TaskService: Première tâche trouvée:', { taskId, taskContainerId, status: firstUserTask['task-status'] });
       
@@ -671,14 +716,9 @@ export class TaskService {
         throw new Error(`Instance ID invalide reçu: ${processInstanceId}`);
       }
       
-      // 2. Récupérer les tâches de l'instance avec l'adaptateur
+      // 2. Récupérer les tâches de l'instance avec l'adaptateur (avec retry court)
       console.log('📋 TaskService: Étape 2 - Récupération des tâches avec adaptateur...');
-      const tasksResult = await this.processInstanceAdapter.getAllTasksOfOneProcessInstance(
-        this.apiUrl,
-        processInstanceId,
-        adapterHeaders
-      );
-      const taskList = tasksResult['task-summary'] || [];
+      const taskList = await this.pollTasksForInstance(processInstanceId, adapterHeaders, 10, 700);
       
       console.log('🔍 TaskService: Tâches récupérées:', taskList);
       
@@ -698,7 +738,7 @@ export class TaskService {
       }
       
       const taskId = firstUserTask['task-id'];
-      const taskContainerId = firstUserTask['task-container-id'] || containerId;
+      let taskContainerId = firstUserTask['task-container-id'] || containerId;
       
       console.log('✅ TaskService: Tâche trouvée avec adaptateur:', { taskId, taskContainerId, status: firstUserTask['task-status'] });
       
@@ -727,11 +767,19 @@ export class TaskService {
       
       // Vérifier d'abord les détails de la tâche
       try {
-        const taskDetails = await this.http.get(
+        const taskDetails: any = await this.http.get(
           `${this.apiUrl}server/containers/${taskContainerId}/tasks/${taskId}`,
           { headers: adapterHeaders }
         ).toPromise();
         console.log('✅ TaskService: Détails de la tâche récupérés:', taskDetails);
+        if (taskDetails && taskDetails['task-container-id']) {
+          // Utiliser le containerId source of truth renvoyé par jBPM
+          const authoritative = taskDetails['task-container-id'];
+          if (authoritative && authoritative !== taskContainerId) {
+            console.log('ℹ️ TaskService: Override containerId par la valeur jBPM:', authoritative);
+            taskContainerId = authoritative;
+          }
+        }
       } catch (taskDetailsError: any) {
         console.warn('⚠️ TaskService: Impossible de récupérer les détails de la tâche:', taskDetailsError);
       }
@@ -824,6 +872,27 @@ export class TaskService {
       console.error('❌ TaskService: Erreur dans le workflow avec adaptateurs:', error);
       throw error;
     }
+  }
+
+  // Attendre que la première user task soit créée (certaines définitions BPMN enchaînent des services avant la user task)
+  private async pollTasksForInstance(processInstanceId: number, headers: HeadersInit, attempts: number = 8, delayMs: number = 500): Promise<any[]> {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const tasksResult = await this.processInstanceAdapter.getAllTasksOfOneProcessInstance(
+          this.apiUrl,
+          processInstanceId,
+          headers
+        );
+        const list = tasksResult && (tasksResult['task-summary'] || tasksResult || []);
+        if (Array.isArray(list) && list.length > 0) {
+          return list;
+        }
+      } catch (e) {
+        // ignore entre les tentatives
+      }
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+    return [];
   }
 
   // ✅ MÉTHODE PRIVÉE POUR DÉMARRER SEULEMENT LE PROCESSUS
@@ -985,37 +1054,40 @@ export class TaskService {
       ).toPromise();
       
       console.log('✅ TaskService: Détails de la tâche récupérés:', taskDetails);
-      
-      // 2. ✅ APPROCHE JBPM PORTAL: Pas de claim automatique
-      const taskStatus = (taskDetails as any)['task-status'];
-      console.log('🔍 TaskService: Statut de la tâche:', taskStatus);
-      
-      console.log('ℹ️ TaskService: Approche JBPM Portal - Pas de claim automatique');
-      console.log('ℹ️ TaskService: On procède directement à la complétion');
-      
-      // 4. ✅ APPROCHE PORTAL: Compléter directement la tâche avec les données du formulaire
-      console.log('📋 TaskService: Étape 4 - Complétion de la tâche (approche portal)...');
-      
-      // Vérifier si les données sont vides
-      if (Object.keys(formData).length === 0) {
-        console.log('ℹ️ TaskService: Aucune donnée de formulaire, complétion sans données');
-        await this.http.put(
-          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/completed`,
-          {},
-          { headers: authHeaders }
-        ).toPromise();
-      } else {
-        console.log('ℹ️ TaskService: Données de formulaire présentes, complétion avec données');
-        console.log('🔍 TaskService: Données à envoyer:', formData);
-        
-        await this.http.put(
-          `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/completed`,
-          formData,
-          { headers: authHeaders }
-        ).toPromise();
+      let taskStatus = (taskDetails as any)['task-status'];
+      console.log('🔍 TaskService: Statut de la tâche (initial):', taskStatus);
+
+      // 2. Claim si nécessaire
+      if (taskStatus === 'Ready') {
+        try {
+          await this.claimTask(taskId, containerId);
+          taskStatus = 'Reserved';
+          console.log('✅ TaskService: Claim automatique OK');
+        } catch (e) {
+          console.warn('⚠️ TaskService: Claim automatique échoué:', e);
+        }
       }
-      
-      console.log('✅ TaskService: Tâche complétée avec succès (approche portal)');
+
+      // 3. Start si nécessaire
+      if (taskStatus === 'Reserved') {
+        try {
+          await this.startTask(taskId, containerId, authHeaders);
+          taskStatus = 'InProgress';
+        } catch (e) {
+          // Certains environnements autorisent la complétion depuis Reserved; on continue
+          console.warn('⚠️ TaskService: Start échoué ou non requis, tentative de complétion quand même');
+        }
+      }
+
+      // 4. Compléter la tâche (avec ou sans données)
+      console.log('📋 TaskService: Étape 4 - Complétion de la tâche...');
+      await this.http.put(
+        `${this.apiUrl}server/containers/${containerId}/tasks/${taskId}/states/completed`,
+        Object.keys(formData || {}).length ? formData : {},
+        { headers: authHeaders }
+      ).toPromise();
+
+      console.log('✅ TaskService: Tâche complétée avec succès');
       
     } catch (error: any) {
       console.error('❌ TaskService: Erreur dans completeTaskWithClaimIfNecessary:', error);

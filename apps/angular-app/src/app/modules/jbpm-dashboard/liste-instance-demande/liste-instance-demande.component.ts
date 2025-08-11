@@ -813,19 +813,28 @@ export class ListeInstanceDemandeComponent implements OnInit {
     console.log('📋 Paramètres reçus:', { containerId, taskId });
     
     try {
-      // Récupérer le formulaire comme dans jbpmPortal
+      // Récupérer le formulaire comme dans jbpmPortal, avec le containerId canonique de la tâche
       // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
       const authHeaders = this.unifiedAuthService.getAuthHeaders();
-      
-      // Combiner les headers d'authentification avec les headers HTML
+
+      // 1) Récupérer les détails pour obtenir le containerId source of truth
+      let canonicalContainerId = containerId;
+      try {
+        const detail = await this.taskService.getTaskDetails(taskId, containerId);
+        const fromDetail = (detail as any)?.['task-container-id'] || (detail as any)?.containerId;
+        if (fromDetail) canonicalContainerId = fromDetail;
+      } catch (e) {
+        console.warn('⚠️ Impossible de récupérer le containerId canonique, utilisation du containerId fourni');
+      }
+
+      // 2) Headers HTML: pas de Content-Type pour un GET HTML
       const htmlHeaders = {
-        'Content-Type': 'text/html',
         'Accept': 'text/html',
         'Authorization': authHeaders.get('Authorization') || ''
       };
-      
-      console.log('🔍 Récupération du formulaire jBPM...');
-      const taskForm = await this.formAPI.getTaskInstanceForm(containerId, taskId, htmlHeaders);
+
+      console.log('🔍 Récupération du formulaire jBPM...', { canonicalContainerId, taskId });
+      const taskForm = await this.formAPI.getTaskInstanceForm(canonicalContainerId, taskId, htmlHeaders);
       
       console.log('✅ Formulaire récupéré:', taskForm ? taskForm.substring(0, 200) + '...' : 'null');
       
@@ -839,7 +848,7 @@ export class ListeInstanceDemandeComponent implements OnInit {
       
       // Stocker le formulaire et les informations de tâche
       this.selectedTaskForm = taskForm;
-      this.selectedTaskInfo = { containerId, taskId };
+      this.selectedTaskInfo = { containerId: canonicalContainerId, taskId };
       this.showTaskFormModal = true;
       
     } catch (error) {
@@ -908,8 +917,11 @@ export class ListeInstanceDemandeComponent implements OnInit {
    */
   private async updateCompletionRate(containerId: string, taskId: number): Promise<void> {
     try {
-      // Récupérer l'instance associée à cette tâche
-      const tasksResult = await this.taskService.getTasksForProcessInstance(taskId);
+      // Récupérer l'instance associée à cette tâche via les détails
+      const detail = await this.taskService.getTaskDetails(taskId, containerId);
+      const piid = Number((detail as any)?.['task-proc-inst-id']);
+      if (!piid || isNaN(piid)) return;
+      const tasksResult = await this.taskService.getTasksForProcessInstance(piid);
       const tasks = tasksResult['task-summary'] || [];
       
       if (Array.isArray(tasks) && tasks.length > 0) {
@@ -921,10 +933,10 @@ export class ListeInstanceDemandeComponent implements OnInit {
         const newRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
         
         // Mettre à jour le taux dans le tableau
-        const instanceRow = this.rows.find(row => row.id === taskId);
+        const instanceRow = this.rows.find(row => row.id === piid);
         if (instanceRow) {
           instanceRow.taux = newRate;
-          console.log('📈 Taux de complétude mis à jour pour l\'instance', taskId, ':', newRate + '%');
+          console.log('📈 Taux de complétude mis à jour pour l\'instance', piid, ':', newRate + '%');
         }
       }
     } catch (error) {

@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -13,6 +13,8 @@ import { KeycloakAngularModule, KeycloakService } from 'keycloak-angular';
 import { NgxPermissionsModule } from 'ngx-permissions';
 import { initKeycloak } from './core/helper/keycloak/init.keycloak';
 import { APP_INITIALIZER } from '@angular/core';
+import { TranslateModule, TranslateService, TranslateLoader } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 
 // jBPM Loader et APIs
 import { AppLoader } from '@jbpm/loader';
@@ -46,7 +48,14 @@ import { KeycloakAuthInterceptor } from './core/service/user/keycloak-auth.inter
     AppRoutingModule,
     KeycloakAngularModule,
     NgxPermissionsModule.forRoot(),
-    SharedModule
+    SharedModule,
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: HttpLoaderFactory,
+        deps: [HttpClient]
+      }
+    })
   ],
   providers: [
     // Keycloak initialization
@@ -74,4 +83,16 @@ import { KeycloakAuthInterceptor } from './core/service/user/keycloak-auth.inter
   ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+  constructor(translate: TranslateService) {
+    // Langue par défaut: FR
+    translate.addLangs(['fr', 'en']);
+    translate.setDefaultLang('fr');
+    translate.use('fr');
+  }
+}
+
+// Chargeur i18n depuis assets/i18n/{lang}.json
+export function HttpLoaderFactory(http: HttpClient) {
+  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
+}

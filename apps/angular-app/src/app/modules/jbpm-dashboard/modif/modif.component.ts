@@ -369,7 +369,7 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
 
     // Définit les fonctions globales
     (window as any).claimTask = () => {
-      const url = `${environment.bpmAPIBaseUrl}containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/claimed`;
+      const url = `${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/claimed`;
       
       makeRequest(url, 'PUT')
         .then(() => {
@@ -381,7 +381,7 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
     };
 
     (window as any).releaseTask = () => {
-      const url = `${environment.bpmAPIBaseUrl}containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/released`;
+      const url = `${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/released`;
       
       makeRequest(url, 'PUT')
         .then(() => {
@@ -393,7 +393,7 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
     };
 
     (window as any).startTask = () => {
-      const url = `${environment.bpmAPIBaseUrl}containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/started`;
+      const url = `${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/started`;
       
       makeRequest(url, 'PUT')
         .then(() => {
@@ -405,7 +405,7 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
     };
 
     (window as any).stopTask = () => {
-      const url = `${environment.bpmAPIBaseUrl}containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/stopped`;
+      const url = `${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/stopped`;
       
       makeRequest(url, 'PUT')
         .then(() => {
@@ -418,7 +418,7 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
 
     (window as any).saveTask = () => {
       const formData = getFormData();
-      const url = `${environment.bpmAPIBaseUrl}containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/contents/output`;
+      const url = `${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/contents/output`;
       
       makeRequest(url, 'PUT', formData)
         .then(() => {
@@ -431,7 +431,7 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
 
     (window as any).completeTask = () => {
       const formData = getFormData();
-      const url = `${environment.bpmAPIBaseUrl}containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/completed`;
+      const url = `${environment.bpmAPIBaseUrl}server/containers/${taskInfo.containerId}/tasks/${taskInfo.taskId}/states/completed`;
       
       makeRequest(url, 'PUT', formData)
         .then(() => {

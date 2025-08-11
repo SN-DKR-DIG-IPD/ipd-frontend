@@ -13,20 +13,64 @@ import { UnifiedAuthService } from '../../core/service/unified-auth.service';
   templateUrl: './task-form.component.html',
   styles: [`
     .task-form-container {
-      background: white;
+      background: #ffffff;
       border: 1px solid #e5e7eb;
       border-radius: 8px;
       padding: 20px;
       min-height: 400px;
       overflow-y: auto;
     }
+    .form-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .form-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #374151;
+      border: 1px solid #e5e7eb;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: all .15s ease;
+    }
+    .pill:hover { background: #f9fafb; border-color:#d1d5db; }
+    .pill.primary { background:#2563eb; color:#fff; border-color:#1d4ed8; }
+    .pill.primary:hover { background:#1d4ed8; }
+
+    .footer-actions{
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .btn{ padding: 8px 14px; border-radius: 8px; font-weight: 500; cursor: pointer; }
+    .btn.primary{ background:#2563eb; color:#fff; border:1px solid #1d4ed8; }
+    .btn.primary:hover{ background:#1d4ed8; }
+    .btn.ghost{ background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; }
+    .btn.ghost:hover{ background:#e5e7eb; }
     
     .jbpm-form-content {
       width: 100%;
+      background: #ffffff !important;
+      color: #111827 !important;
     }
     
     .jbpm-form-content form {
       width: 100%;
+      background: #ffffff !important;
     }
     
     .jbpm-form-content input,
@@ -78,7 +122,7 @@ export class TaskFormComponent implements OnInit, OnChanges {
   currentUser: any = null;
 
   constructor(
-    private taskService: TaskService,
+    public taskService: TaskService,
     private userService: UserService,
     private fb: FormBuilder,
     private sanitizer: DomSanitizer,
@@ -89,19 +133,7 @@ export class TaskFormComponent implements OnInit, OnChanges {
 
   async ngOnInit() {
     if (this.taskId && this.containerId) {
-      // Rafraîchir les informations de l'utilisateur
-      await this.userService.initializeCurrentUser();
-      this.currentUser = this.userService.getCurrentUser();
-      console.log('Utilisateur actuel:', this.currentUser);
-      
-      // Vérifier les permissions selon le groupe avant de charger le formulaire
-      await this.checkPermissions();
-      if (this.hasPermission) {
-        await this.loadForm();
-      } else {
-        this.errorMsg = `Vous n'avez pas les permissions nécessaires pour accéder à cette tâche. 
-                        Groupe requis: ${this.getRequiredGroup()}`;
-      }
+      await this.loadForm();
     }
   }
 
@@ -123,18 +155,26 @@ export class TaskFormComponent implements OnInit, OnChanges {
     try {
       console.log('Chargement du formulaire pour la tâche:', this.taskId, 'container:', this.containerId);
       
-      // ✅ REMPLACÉ: sessionStorage par UnifiedAuthService
-      const authHeaders = this.unifiedAuthService.getAuthHeaders();
-      const htmlHeaders = {
-        'Content-Type': 'text/html',
-        'Accept': 'text/html'
-      };
+      // Headers: pas de Content-Type pour GET HTML; Accept text/html
+      const htmlHeaders = { 'Accept': 'text/html' } as Record<string, string>;
+      // Ajouter explicitement le Bearer si disponible (certains adaptateurs FormAPI ne fusionnent pas automatiquement)
+      try {
+        const token = this.unifiedAuthService.getToken();
+        if (token) {
+          htmlHeaders['Authorization'] = `Bearer ${token}`;
+        } else {
+          const authHeaders = this.unifiedAuthService.getAuthHeaders();
+          const authVal = authHeaders.get('Authorization');
+          if (authVal) htmlHeaders['Authorization'] = authVal;
+        }
+      } catch {}
       
       console.log('FormAPI: Récupération du formulaire avec headers:', htmlHeaders);
       const htmlContent = await this.formAPI.getTaskInstanceForm(this.containerId, this.taskId, htmlHeaders);
       
       if (htmlContent && htmlContent.length > 0) {
-        this.formHtml = htmlContent;
+        const cleanedHtml = this.cleanAndEnhanceFormHtml(htmlContent);
+        this.formHtml = cleanedHtml;
         this.sanitizedFormHtml = this.sanitizer.bypassSecurityTrustHtml(this.formHtml);
         console.log('Formulaire HTML chargé avec succès via FormAPI');
       } else {
@@ -171,6 +211,61 @@ export class TaskFormComponent implements OnInit, OnChanges {
       
       this.errorMsg = 'Erreur lors du chargement du formulaire : ' + (err.message || err);
       this.isLoading = false;
+    }
+  }
+
+  private cleanAndEnhanceFormHtml(html: string): string {
+    try {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+
+      // Supprimer les liens CSS/scripts/styles externes du formulaire (souvent non chargeables et causent des erreurs MIME)
+      tempDiv.querySelectorAll('link[rel="stylesheet"], script').forEach(el => el.remove());
+      // Garder les styles inline existants, mais injecter un style minimal pour grille
+      const style = document.createElement('style');
+      style.textContent = `
+        .jbpm-form-content form { display:grid; grid-template-columns: 220px 1fr; gap: 12px 16px; }
+        .jbpm-form-content form label { align-self:center; font-size:13px; color:#374151; }
+        .jbpm-form-content input, .jbpm-form-content select, .jbpm-form-content textarea {
+          width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#111827;
+        }
+        .jbpm-form-content button { padding:6px 10px; border-radius:6px; border:1px solid #e5e7eb; background:#f9fafb; cursor:pointer; }
+        .jbpm-form-content button:hover { background:#f3f4f6; }
+      `;
+      tempDiv.prepend(style);
+
+      // Neutraliser les onclick intégrés pour éviter l'exécution de JS externe
+      tempDiv.querySelectorAll('[onclick]').forEach(el => el.removeAttribute('onclick'));
+
+      // Réécrire les URLs kie-server absolues vers le proxy
+      tempDiv.querySelectorAll('[src], [href], form').forEach((el: Element) => {
+        const attr = (el.hasAttribute('src') ? 'src' : (el.hasAttribute('href') ? 'href' : (el.tagName.toLowerCase() === 'form' ? 'action' : '')));
+        if (!attr) return;
+        const val = (el as any).getAttribute(attr) as string;
+        if (!val) return;
+        const rewritten = val
+          .replace(/https?:\/\/localhost:8080\/kie-server/gi, '/jbpm/api')
+          .replace(/\/kie-server\//gi, '/jbpm/api/server/');
+        if (rewritten !== val) (el as any).setAttribute(attr, rewritten);
+      });
+
+      // Neutraliser la soumission native du/ des formulaire(s)
+      tempDiv.querySelectorAll('form').forEach((f: Element) => {
+        (f as HTMLFormElement).setAttribute('action', '');
+        (f as HTMLFormElement).setAttribute('target', '_self');
+        (f as HTMLFormElement).setAttribute('novalidate', '');
+        (f as HTMLFormElement).addEventListener('submit', (e) => { e.preventDefault(); e.stopPropagation(); });
+      });
+
+      // Convertir les boutons submit en boutons normaux afin d'éviter la navigation
+      tempDiv.querySelectorAll('input[type="submit"], button[type="submit"]').forEach((btn: Element) => {
+        (btn as HTMLButtonElement).setAttribute('type', 'button');
+        (btn as HTMLButtonElement).setAttribute('data-local-submit', 'true');
+      });
+
+      return tempDiv.innerHTML;
+    } catch {
+      return html;
     }
   }
 
@@ -217,6 +312,23 @@ export class TaskFormComponent implements OnInit, OnChanges {
         return `<textarea id="${key}" name="${key}" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md">${value}</textarea>`;
       default:
         return `<input type="text" id="${key}" name="${key}" value="${value}" class="w-full px-3 py-2 border border-gray-300 rounded-md">`;
+    }
+  }
+
+  // Sauvegarde basique: extrait les champs présents et appelle l'API saveTaskData
+  async saveCurrentForm(): Promise<void> {
+    try {
+      const container = document.querySelector('.jbpm-form-content');
+      if (!container) return;
+      const inputs = container.querySelectorAll('input, select, textarea');
+      const data: any = {};
+      inputs.forEach((el: any) => {
+        if (!el.name) return;
+        if (el.type === 'checkbox') data[el.name] = !!el.checked; else data[el.name] = el.value ?? '';
+      });
+      await this.taskService.saveTaskData(this.taskId, this.containerId, data);
+    } catch (e) {
+      console.warn('Save form error:', e);
     }
   }
 
@@ -267,12 +379,12 @@ export class TaskFormComponent implements OnInit, OnChanges {
   handleFormClick(event: Event) {
     // Intercepter les clics sur les boutons de soumission du formulaire HTML
     const target = event.target as HTMLElement;
-    if (target.tagName === 'BUTTON' || target.closest('button')) {
+    if (target.tagName === 'BUTTON' || target.closest('button') || (target as HTMLInputElement).type === 'submit') {
       event.preventDefault();
       event.stopPropagation();
       
       const button = target.tagName === 'BUTTON' ? target as HTMLButtonElement : target.closest('button') as HTMLButtonElement;
-      if (button && (button.type === 'submit' || button.textContent?.toLowerCase().includes('soumettre'))) {
+      if (button && (button.type === 'submit' || button.textContent?.toLowerCase().includes('soumettre') || button.textContent?.toLowerCase().includes('complete'))) {
         this.submitHtmlForm();
       }
     }
@@ -290,25 +402,32 @@ export class TaskFormComponent implements OnInit, OnChanges {
     
     try {
       // Récupérer les données du formulaire HTML
-      const formElement = document.querySelector('.jbpm-form-content form') as HTMLFormElement;
+      const container = document.querySelector('.jbpm-form-content') as HTMLElement;
+      const formElement = container ? (container.querySelector('form') as HTMLFormElement) : null;
       if (formElement) {
-        const formData = new FormData(formElement);
         const data: any = {};
-        
-        formData.forEach((value, key) => {
-          data[key] = value;
+        const elements = formElement.querySelectorAll('input, select, textarea');
+        elements.forEach((el: any) => {
+          if (!el.name) return;
+          if (el.type === 'checkbox') {
+            data[el.name] = !!el.checked;
+          } else if (el.type === 'radio') {
+            if (el.checked) data[el.name] = el.value;
+          } else {
+            data[el.name] = el.value ?? '';
+          }
         });
         
         console.log('Données du formulaire HTML à soumettre:', data);
         
-        await this.taskService.completeTask(this.taskId, this.containerId, data);
+        await this.taskService.completeTaskWithClaimIfNecessary(this.taskId, this.containerId, data);
         this.completed.emit();
         console.log('Tâche complétée avec succès');
       } else {
         // Si pas de formulaire trouvé, essayer de récupérer les variables d'entrée
         const taskVariables = await this.taskService.getTaskInputVariables(this.taskId, this.containerId);
         if (taskVariables) {
-          await this.taskService.completeTask(this.taskId, this.containerId, taskVariables);
+          await this.taskService.completeTaskWithClaimIfNecessary(this.taskId, this.containerId, taskVariables);
           this.completed.emit();
           console.log('Tâche complétée avec les variables par défaut');
         } else {
@@ -323,45 +442,11 @@ export class TaskFormComponent implements OnInit, OnChanges {
     this.isLoading = false;
   }
 
-  /**
-   * Vérifie les permissions de l'utilisateur pour cette tâche selon son groupe
-   */
-  private async checkPermissions(): Promise<void> {
-    try {
-      // Récupérer les détails de la tâche pour obtenir son nom
-      const taskDetails = await this.taskService.getTaskDetails(this.taskId, this.containerId);
-      const taskName = taskDetails['task-name'] || '';
-      
-      console.log('=== DIAGNOSTIC PERMISSIONS ===');
-      console.log('Nom de la tâche:', taskName);
-      console.log('Utilisateur actuel:', this.currentUser);
-      console.log('Groupes de l\'utilisateur:', this.currentUser?.groups);
-      console.log('Tâche contient "selfEvaluation":', taskName.includes('selfEvaluation'));
-      console.log('Tâche contient "pmEvaluation":', taskName.includes('pmEvaluation'));
-      console.log('Tâche contient "hrEvaluation":', taskName.includes('hrEvaluation'));
-      
-      // Vérifier si l'utilisateur peut accéder à cette tâche selon son groupe
-      this.hasPermission = this.userService.canAccessTask(taskName);
-      
-      console.log('Permission accordée:', this.hasPermission);
-      console.log('=== FIN DIAGNOSTIC ===');
-    } catch (error) {
-      console.error('Erreur lors de la vérification des permissions:', error);
-      this.hasPermission = false;
-    }
+  // Suppression du gating côté front: on laisse le serveur autoriser/refuser
+  // Soumettre puis avancer (déclenche un event global, capté par le parent)
+  async submitAndGoNext(): Promise<void> {
+    await this.submitHtmlForm();
+    const nextEvent = new CustomEvent('taskFormCompleted');
+    window.dispatchEvent(nextEvent);
   }
-
-  /**
-   * Obtient le groupe requis pour cette tâche
-   */
-  private getRequiredGroup(): string {
-    // Cette méthode pourrait être améliorée pour retourner le groupe exact requis
-    // Pour l'instant, on retourne une indication basée sur les patterns connus
-    if (this.currentUser?.groups) {
-      if (this.currentUser.groups.includes('PM')) return 'PM';
-      if (this.currentUser.groups.includes('HR')) return 'HR';
-      if (this.currentUser.groups.includes('employe')) return 'employe';
-    }
-    return 'Groupe approprié';
-  }
-} 
+}

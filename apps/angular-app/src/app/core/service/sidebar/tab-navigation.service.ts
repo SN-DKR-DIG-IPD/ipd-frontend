@@ -13,7 +13,7 @@ export class TabNavigationService {
         index: 1,
         label: 'Tableau de bord',
         icon: 'layout-dashboard',
-        route: '/home/dashboard',
+        route: '/dashboard',
       },
       {
         index: 2,
@@ -23,12 +23,12 @@ export class TabNavigationService {
           {
             index: 1,
             label: 'OM nationale',
-            route:'/home/demand/omnationale'
+            route:'/demand/omnationale'
           },
           {
             index: 2,
             label: 'OM internationale',
-            route:'/home/demand/ominternationale'
+            route:'/demand/ominternationale'
           },
         ]
       },
