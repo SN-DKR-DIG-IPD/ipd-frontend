@@ -35,64 +35,41 @@
     <span class="ml-3 text-gray-600">Chargement des tâches...</span>
   </div>
 
-  <!-- Liste des tâches -->
+  <!-- Liste des tâches (souscription via async) -->
+  <ng-container *ngIf="data$ | async as list"></ng-container>
   <div *ngIf="!isLoading && tasks.length > 0" class="bg-white shadow rounded-lg overflow-hidden">
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Tâche
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Statut
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Priorité
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Assigné à
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date de création
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processus</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conteneur</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigné à</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priorité</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créée le</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr *ngFor="let task of tasks" class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">
-                {{ task['task-name'] }}
-              </div>
-              <div class="text-sm text-gray-500">
-                ID: {{ task['task-id'] }}
-              </div>
-            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ task['task-id'] }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ task['task-name'] }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ task['process-id'] || task['task-proc-def-id'] }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ task['task-container-id'] }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ task['task-actual-owner'] || 'Non assigné' }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ task['task-priority'] ?? '-' }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                    [ngClass]="getTaskStatusClass(task['task-status'])">
-                {{ task['task-status'] }}
+                    [ngClass]="getTaskStatusClass(task['task-status'] || task['status'])">
+                {{ task['task-status'] || task['status'] }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                {{ task['task-priority'] }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ task['task-actual-owner'] || 'Non assigné' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ formatDate(task['task-created-on']) }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <button (click)="openTaskForm(task)"
-                      class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded-md text-xs">
-                Ouvrir
-              </button>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(task['task-created-on'] || task['created-on']) }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-2">
+              <button (click)="openTaskForm(task)" class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded-md text-xs">Ouvrir</button>
             </td>
           </tr>
         </tbody>

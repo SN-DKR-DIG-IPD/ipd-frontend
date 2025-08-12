@@ -1,13 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { TaskService } from 'src/app/shared/services/task.service';
 import { AuthService } from 'src/app/core/service/user/auth.service';
-import { UserTasks } from '@domain/types/user-tasks';
 import { Router } from '@angular/router';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-inbox-tasks',
   templateUrl: './inbox-tasks.component.html',
-  styleUrl: './inbox-tasks.component.scss'
+  styleUrls: ['./inbox-tasks.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InboxTasksComponent implements OnInit {
   tasks: any[] = [];
@@ -16,6 +18,8 @@ export class InboxTasksComponent implements OnInit {
   username: string | null = null;
   userRoles: string[] = [];
   userGroups: string[] = [];
+  data$!: Observable<any[]>;
+  private reload$ = new BehaviorSubject<void>(undefined);
 
   constructor(
     private taskService: TaskService,
@@ -24,57 +28,63 @@ export class InboxTasksComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Flux de données pour les tâches basé sur reload$
+    this.data$ = this.reload$.pipe(
+      switchMap(() => {
+        if (!this.username) return of([]);
+        this.isLoading = true;
+        this.errorMsg = '';
+        return this.taskService
+          .getUserTasks({ statuses: ['Ready', 'Reserved', 'InProgress'], pageSize: 50 })
+          .pipe(
+            map((res: any) => (res && res['task-summary']) ? res['task-summary'] : (res || [])),
+            tap(() => (this.isLoading = false)),
+            catchError((err) => {
+              this.errorMsg = err?.message || 'Erreur lors du chargement des tâches.';
+              this.isLoading = false;
+              return of([]);
+            })
+          );
+      })
+    );
+
     this.authService.getUsername$().subscribe(username => {
       this.username = username;
-      this.loadTasks();
+      this.refresh();
     });
     this.authService.getRoles$().subscribe(roles => {
       this.userRoles = roles || [];
-      this.loadTasks();
+      this.refresh();
     });
     this.authService.getGroups$().subscribe(groups => {
       this.userGroups = groups || [];
-      this.loadTasks();
+      this.refresh();
     });
   }
 
-  async loadTasks() {
+  refresh(): void {
     if (!this.username) return;
-    this.isLoading = true;
-    this.errorMsg = '';
-    try {
-      // Utilise la nouvelle méthode pour récupérer toutes les tâches où l'utilisateur est potential owner
-      const userTasks: UserTasks = await this.taskService.getUserPotentialTasks();
-      const allUserAuthorities = [...this.userRoles, ...this.userGroups];
-      console.log('Groupes/roles utilisateur:', allUserAuthorities);
-      console.log('Tâches reçues:', userTasks['task-summary']);
-      (userTasks['task-summary'] || []).forEach((task: any) => {
-        const t: any = task;
-        console.log('Tâche:', t['task-name'], '| Potential owner:', t['task-potential-owner'], '| Potential group:', t['task-potential-group'], '| Actual owner:', t['task-actual-owner']);
-      });
-      this.tasks = (userTasks['task-summary'] || []).filter(task => {
-        if (task['task-actual-owner'] === this.username) return true;
-        const t: any = task;
-        const potentialGroups: string[] = ((t['task-potential-owner'] as string) || (t['task-potential-group'] as string) || '').split(',').map((g: string) => g.trim()).filter(Boolean);
-        return potentialGroups.some((g: string) => allUserAuthorities.includes(g));
-      });
-    } catch (err: any) {
-      this.errorMsg = err?.message || 'Erreur lors du chargement des tâches.';
-    }
-    this.isLoading = false;
+    this.reload$.next();
   }
 
-  openTask(task: any) {
-    const allUserAuthorities = [...this.userRoles, ...this.userGroups];
-    const t: any = task;
-    const potentialGroups: string[] = ((t['task-potential-owner'] as string) || (t['task-potential-group'] as string) || '').split(',').map((g: string) => g.trim()).filter(Boolean);
-    if (
-      task['task-actual-owner'] === this.username ||
-      potentialGroups.some((g: string) => allUserAuthorities.includes(g))
-    ) {
-      this.router.navigate(['/demand/task', task['task-id'], task['task-container-id']]);
-    } else {
-      this.errorMsg = "Vous n'avez pas accès à cette tâche.";
+  async openTask(task: any) {
+    try {
+      // Récupérer les métadonnées et variables pour alimenter la modale Detail
+      const taskId = Number(task['task-id']);
+      const containerId = String(task['task-container-id']);
+      // Détails + variables d'entrée
+      const details = await this.taskService.getTaskDetails(taskId, containerId);
+      const inputVars = await this.taskService.getTaskInputVariables(taskId, containerId);
+      // Naviguer vers la modale existante (comportement actuel) via route dédiée si présente
+      // Sinon, réutiliser le flux actuel (selon votre app) → ici navigation vers la page existante
+      this.router.navigate(['/demand/task', taskId, containerId], {
+        state: {
+          taskDetails: details,
+          inputVariables: inputVars
+        }
+      });
+    } catch (e: any) {
+      this.errorMsg = e?.message || "Erreur lors de l'ouverture de la tâche.";
     }
   }
 }

@@ -1,32 +1,57 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { TaskService } from '../../shared/services/task.service';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { DemandesTachesService, TaskVM } from '../../core/services/jbpm/demandes-taches.service';
 import { UserService } from '../../shared/services/user.service';
 import { MatDialog } from '@angular/material/dialog';
 import { TaskFormComponent } from '../demand/task-form.component';
-import { Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, catchError, map, switchMap, takeUntil, tap, of, finalize } from 'rxjs';
 
 @Component({
   selector: 'app-user-tasks',
   templateUrl: './user-tasks.component.html',
-  styleUrls: ['./user-tasks.component.scss']
+  styleUrls: ['./user-tasks.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserTasksComponent implements OnInit, OnDestroy {
   tasks: any[] = [];
   isLoading = false;
   errorMsg = '';
   currentUser: any = null;
+  data$!: Observable<any[]>;
+  private reload$ = new BehaviorSubject<void>(undefined);
   
   private destroy$ = new Subject<void>();
 
   constructor(
-    private taskService: TaskService,
+    private taskService: DemandesTachesService,
     private userService: UserService,
     private dialog: MatDialog
   ) {}
 
   ngOnInit() {
     this.loadUserInfo();
-    this.loadUserTasks();
+    // Flux réactif des tâches
+    this.data$ = this.reload$.pipe(
+      tap(() => { this.isLoading = true; this.errorMsg = ''; }),
+      switchMap(() => this.taskService.listCombined({ statuses: ['Ready','Reserved','InProgress'], pageSize: 200 }).pipe(
+        map((res: TaskVM[]) => res.map(t => ({
+          'task-id': t.taskId,
+          'task-name': t.name,
+          'task-proc-def-id': '',
+          'task-container-id': t.containerId,
+          'task-status': t.status,
+          'task-priority': '-',
+          'task-actual-owner': t.owner,
+          'task-created-on': t.createdOn
+        }))),
+        tap(list => { this.tasks = list; }),
+        catchError((error: any) => {
+          this.errorMsg = 'Erreur lors du chargement des tâches : ' + (error?.message || '');
+          return of([]);
+        }),
+        finalize(() => { this.isLoading = false; })
+      ))
+    );
+    this.refreshTasks();
   }
 
   ngOnDestroy() {
@@ -45,23 +70,8 @@ export class UserTasksComponent implements OnInit, OnDestroy {
   /**
    * Charge les tâches de l'utilisateur filtrées selon son groupe
    */
-  async loadUserTasks(): Promise<void> {
-    this.isLoading = true;
-    this.errorMsg = '';
-    
-    try {
-      // Utiliser la méthode qui filtre automatiquement selon le groupe
-      const result = await this.taskService.getUserTasks();
-      this.tasks = result['task-summary'] || [];
-      
-      console.log('Tâches filtrées selon le groupe:', this.tasks);
-    } catch (error: any) {
-      this.errorMsg = 'Erreur lors du chargement des tâches : ' + (error.message || error);
-      console.error('Erreur loadUserTasks:', error);
-    } finally {
-      this.isLoading = false;
-    }
-  }
+  // Ancienne méthode remplacée par le flux data$
+  private loadUserTasks(): void { /* deprecated */ }
 
   /**
    * Ouvre le formulaire de tâche
@@ -119,7 +129,7 @@ export class UserTasksComponent implements OnInit, OnDestroy {
    * Rafraîchit la liste des tâches
    */
   refreshTasks(): void {
-    this.loadUserTasks();
+    this.reload$.next();
   }
 
   /**

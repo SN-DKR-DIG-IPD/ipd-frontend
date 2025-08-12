@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UnifiedAuthService } from '../../core/service/unified-auth.service';
@@ -332,14 +332,18 @@ export class TaskService {
     }
   }
 
-  async getUserTasks(headers?: any): Promise<any> {
-    try {
-      const result = await this.http.get(`${this.apiUrl}server/queries/tasks/user`).toPromise();
-      return result;
-    } catch (error: any) {
-      console.error('❌ TaskService: Erreur lors de la récupération des tâches utilisateur:', error);
-      throw error;
-    }
+  getUserTasks(options?: { statuses?: string[]; page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc'; containerId?: string; processId?: string }): Observable<any> {
+    const url = `${this.apiUrl}server/queries/tasks/instances/pot-owners`;
+    const statuses = options?.statuses || ['Ready', 'Reserved', 'InProgress'];
+    let params = new HttpParams()
+      .set('page', String(options?.page ?? 0))
+      .set('pageSize', String(options?.pageSize ?? 50))
+      .set('sort_by', options?.sortBy ?? 'task-id')
+      .set('sort_order', options?.sortOrder ?? 'desc');
+    if (options?.containerId) params = params.set('containerId', options.containerId);
+    if (options?.processId) params = params.set('processId', options.processId);
+    statuses.forEach(s => params = params.append('status', s));
+    return this.http.get(url, { params });
   }
 
   async getUserPotentialTasks(headers?: any): Promise<any> {

@@ -32,7 +32,7 @@ export class ProcessInstanceService {
         return (result as any).result;
       }
       
-      return result;
+    return result;
     } catch (error: any) {
       console.error('❌ ProcessInstanceService: Erreur lors de la récupération des instances:', error);
       throw error;
@@ -42,7 +42,7 @@ export class ProcessInstanceService {
   async getProcessInstanceVariables(containerId: string, processInstanceId: number, headers?: any): Promise<any> {
     try {
       const result = await this.http.get(`${this.apiUrl}server/containers/${containerId}/processes/instances/${processInstanceId}/variables`).toPromise();
-      return result || {};
+    return result || {};
     } catch (error: any) {
       console.error('❌ ProcessInstanceService: Erreur lors de la récupération des variables:', error);
       throw error;

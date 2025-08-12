@@ -1,4 +1,6 @@
-import { Component, OnInit, Output, EventEmitter, Inject } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, Inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { DemandesInstancesService, InstanceVM } from '../../../core/services/jbpm/demandes-instances.service';
+import { BehaviorSubject, Observable, startWith, switchMap, forkJoin, from, map, catchError, of } from 'rxjs';
 import { ProcessInstanceService } from '../../../shared/services/process-instance.service';
 import { ContainerService } from '../../../shared/services/container.service';
 import { TaskService } from '../../../shared/services/task.service';
@@ -20,11 +22,13 @@ interface InstanceRow {
   variables: any;
   currentTask?: string;
   assignedTo?: string;
+  eligible?: 'owner' | 'group' | 'none';
 }
 
 @Component({
   selector: 'app-liste-instance-demande',
   templateUrl: './liste-instance-demande.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ListeInstanceDemandeComponent implements OnInit {
   private static readonly STORAGE_KEY_SELECTED_CONTAINER = 'jbpm.selectedContainerId';
@@ -53,13 +57,19 @@ export class ListeInstanceDemandeComponent implements OnInit {
   showTaskFormModal = false;
   selectedTaskForm: string = '';
   selectedTaskInfo: { containerId: string; taskId: number } | null = null;
+  data$!: Observable<InstanceVM[]>;
+  private reload$ = new BehaviorSubject<void>(undefined);
+  trackById = (_: number, r: any) => r?.processInstanceId ?? r?.id ?? _;
+
   constructor(
     private processInstanceService: ProcessInstanceService,
+    private demandesInstances: DemandesInstancesService,
     private containerService: ContainerService,
     private taskService: TaskService,
     @Inject(DiagramAPI) private diagramAPI: IDiagramAPI,
     @Inject(FormAPI) private formAPI: IFormAPI,
-    private unifiedAuthService: UnifiedAuthService
+    private unifiedAuthService: UnifiedAuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit() {
@@ -71,10 +81,63 @@ export class ListeInstanceDemandeComponent implements OnInit {
       }
     } catch {}
 
-    await this.reload(this.selectedContainerId || undefined);
+    // Chargement initial + préparation des filtres
+    this.loadInstances();
     
     // Test de connectivité pour le diagramme
     await this.testDiagramAPI();
+  }
+
+  private loadInstances(): void {
+    this.isLoading = true;
+    this.errorMsg = '';
+    this.demandesInstances.list({ pageSize: 50 }).subscribe({
+      next: (list) => {
+        this.rows = (list || []).map((r) => ({
+          id: r.processInstanceId,
+          type: r.processId,
+          statut: r.state as any,
+          dateDebut: r.startDate ? new Date(r.startDate).toISOString() : '',
+          dateFin: r.endDate ? new Date(r.endDate).toISOString() : '',
+          responsable: r.initiator || '',
+          priorite: '',
+          approbation: '',
+          taux: 0,
+          containerId: r.containerId,
+          variables: {}
+        } as InstanceRow));
+        this.typeOMList = Array.from(new Set((list || []).map((r) => r.processId).filter(Boolean)));
+        this.filteredRows = [...this.rows];
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.errorMsg = err?.message || 'Erreur lors du chargement des demandes.';
+        this.rows = [];
+        this.filteredRows = [];
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // Filtres (Type OM) – déjà présent plus bas, on garde une seule implémentation
+
+  openInstanceDetail(r: InstanceVM): void {
+    const row: any = {
+      id: r.processInstanceId,
+      type: r.processId,
+      containerId: r.containerId,
+      statut: r.state,
+      dateDebut: r.startDate ? r.startDate.toISOString() : '',
+      dateFin: r.endDate ? r.endDate.toISOString() : '',
+      responsable: r.initiator,
+      priorite: '',
+      approbation: '',
+      taux: 0,
+      variables: {}
+    };
+    this.openDetailModal(row);
   }
 
   /**
@@ -110,175 +173,8 @@ export class ListeInstanceDemandeComponent implements OnInit {
     }
   }
 
-  async reload(containerId?: string) {
-    if (this.isLoading) return; // Empêche les rechargements multiples
-    this.isLoading = true;
-    this.errorMsg = '';
-    this.rows = [];
-    this.typeOMList = [];
-    try {
-      const containersResult = await this.containerService.listContainers();
-      this.containers = containersResult || [];
-      // Déterminer le container sélectionné
-      const selected = containerId || this.selectedContainerId || (this.containers[0]?.['container-id'] || '');
-      this.selectedContainerId = selected;
-      // Sauvegarder la sélection pour restauration après refresh
-      try {
-        if (this.selectedContainerId) {
-          localStorage.setItem(ListeInstanceDemandeComponent.STORAGE_KEY_SELECTED_CONTAINER, this.selectedContainerId);
-        }
-      } catch {}
-      if (!this.selectedContainerId) {
-        this.isLoading = false;
-        this.errorMsg = 'Aucun processus sélectionné. Sélectionnez un container pour afficher les demandes.';
-        return;
-      }
-      // Chargement des instances uniquement pour le container sélectionné
-      const allInstances = await Promise.all(this.containers.filter((c: any)=> c['container-id']===this.selectedContainerId).map(async (container: any) => {
-        const containerId = container['container-id'];
-        const instancesResult = await this.processInstanceService.getAllProcessInstances(containerId);
-        const instances = instancesResult['process-instance'] || [];
-        // Chargement des variables de toutes les instances en parallèle
-        const instanceRows = await Promise.all(instances.map(async (instance: any) => {
-          try {
-            const variables = await this.processInstanceService.getProcessInstanceVariables(containerId, instance['process-instance-id']);
-            const instanceData = instance as any;
-            // DEBUG : log des variables et de l'instance pour comprendre pourquoi date de fin est absente
-            console.log('Instance ID:', instance['process-instance-id']);
-             console.log('Process Name:', instance['process-name']);
-            console.log('variables:', variables);
-            console.log('instanceData:', instanceData);
-            const dateDebut = variables['dateDebut'] || instanceData['start-date'] || '';
-            const dateFin = variables['dateFin'] || instanceData['end-date'] || '';
-            const approbateur = variables['approbateur'] || variables['approbation'] || instanceData['initiator'] || '';
-            const roleApprobateur = variables['roleApprobateur'] || variables['role_approbateur'] || '';
-            // Calculer le taux de complétude dynamiquement
-            let taux = 0;
-            try {
-              const tasksResult = await this.taskService.getTasksForProcessInstance(instance['process-instance-id']);
-              const tasks = tasksResult['task-summary'] || [];
-              
-              if (Array.isArray(tasks) && tasks.length > 0) {
-                const totalTasks = tasks.length;
-                const completedTasks = tasks.filter((task: any) => 
-                  task['task-status'] === 'Completed' || task['task-status'] === 'Terminé'
-                ).length;
-                
-                // Calculer le taux basé sur les tâches complétées
-                const taskBasedRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-                
-                // Ajuster le taux selon l'état du processus
-                const processState = String(instance['process-instance-state']);
-                if (processState === '2') { // Complété
-                  taux = 100;
-                } else if (processState === '1') { // Actif
-                  // Si des tâches sont en cours, donner un taux de progression
-                  const activeTasks = tasks.filter((task: any) => 
-                    task['task-status'] === 'Ready' || task['task-status'] === 'InProgress'
-                  ).length;
-                  
-                  if (activeTasks > 0) {
-                    // Calculer le taux basé sur la progression dans le workflow
-                    const workflowProgress = this.calculateWorkflowProgress(instance['process-name'], tasks);
-                    taux = Math.max(taskBasedRate, workflowProgress);
-                  } else {
-                    taux = taskBasedRate;
-                  }
-                } else {
-                  taux = taskBasedRate;
-                }
-                
-                console.log('📊 Taux calculé pour l\'instance', instance['process-instance-id'], ':', taux + '%');
-              } else {
-                // Si aucune tâche trouvée, calculer basé sur l'état du processus
-                const processState = String(instance['process-instance-state']);
-                if (processState === '2') {
-                  taux = 100;
-                } else if (processState === '1') {
-                  taux = 25; // Taux initial pour les processus actifs
-                } else {
-                  taux = 0;
-                }
-              }
-            } catch (error) {
-              console.log('⚠️ Impossible de calculer le taux pour l\'instance:', instance['process-instance-id']);
-              // Fallback basé sur l'état du processus
-              const processState = String(instance['process-instance-state']);
-              if (processState === '2') {
-                taux = 100;
-              } else if (processState === '1') {
-                taux = 25;
-              } else {
-                taux = 0;
-              }
-            }
-            const typeOM = variables['typeOM'] || instance['process-name'] || '';
-            if (!this.rows.some(r => r.id === instance['process-instance-id'])) {
-              // Récupérer les informations de tâche actuelle
-              let currentTask = 'En cours...';
-              let assignedTo = 'Non assigné';
-              
-              try {
-                // Récupérer les tâches de l'instance
-                const tasksResult = await this.taskService.getTasksForProcessInstance(instance['process-instance-id']);
-                const tasks = tasksResult['task-summary'] || [];
-                
-                if (Array.isArray(tasks) && tasks.length > 0) {
-                  // Filtrer les tâches actives
-                  const activeTasks = tasks.filter((task: any) => 
-                    task['task-status'] === 'Ready' || task['task-status'] === 'InProgress'
-                  );
-                  
-                  if (activeTasks.length > 0) {
-                    const firstActiveTask = activeTasks[0];
-                    currentTask = firstActiveTask['task-name'] || 'Tâche active';
-                    assignedTo = firstActiveTask['task-actual-owner'] || 'Non assigné';
-                  }
-                }
-              } catch (error) {
-                console.log('⚠️ Impossible de récupérer les tâches pour l\'instance:', instance['process-instance-id']);
-              }
-              
-              const row: InstanceRow = {
-                id: instance['process-instance-id'],
-                type: typeOM,
-                statut: this.formatStatus(String(instance['process-instance-state'])),
-                dateDebut: this.formatDate(dateDebut),
-                dateFin: dateFin ? this.formatDate(dateFin) : '',
-                responsable: instance['initiator'] || '',
-                priorite: variables['priority'] || '',
-                approbation: variables['approbation'] || '',
-                taux: taux,
-                containerId,
-                currentTask,
-                assignedTo,
-                variables: {
-                  ...variables,
-                  approbateur,
-                  roleApprobateur
-                }
-              };
-              this.rows.push(row);
-              if (typeOM && this.typeOMList.indexOf(typeOM) === -1) {
-                this.typeOMList.push(typeOM);
-              }
-              return row;
-            }
-            return null;
-          } catch (error) {
-            return null;
-          }
-        }));
-        return instanceRows.filter(Boolean);
-      }));
-      // Aplatir le tableau de résultats
-      this.rows = allInstances.flat(2).filter((row): row is InstanceRow => !!row);
-      this.filteredRows = [...this.rows];
-    } catch (err: any) {
-      this.errorMsg = err?.message || 'Erreur lors du chargement des instances de processus.';
-    } finally {
-      this.isLoading = false;
-    }
+  async reload(): Promise<void> {
+    this.loadInstances();
   }
 
   private formatStatus(status: string): string {
@@ -351,6 +247,31 @@ export class ListeInstanceDemandeComponent implements OnInit {
       'hussein': 'bg-orange-100 text-orange-800'
     };
     return assignedClasses[assignedTo] || 'bg-gray-100 text-gray-800';
+  }
+
+  private isUserEligibleForTask(tasks: any[]): 'owner' | 'group' | 'none' {
+    try {
+      const currentUserRaw = sessionStorage.getItem('user') || '{}';
+      const currentUser = JSON.parse(currentUserRaw);
+      const username = currentUser?.preferred_username || currentUser?.name || '';
+      const groups: string[] = currentUser?.groups || [];
+      // Reserved / InProgress pour moi
+      const owned = tasks.some((t: any) =>
+        (t['task-status'] === 'Reserved' || t['task-status'] === 'InProgress') &&
+        String(t['task-actual-owner'] || '').toLowerCase() === String(username).toLowerCase()
+      );
+      if (owned) return 'owner';
+      // Ready via mes groupes/roles
+      const groupEligible = tasks.some((t: any) => {
+        if (t['task-status'] !== 'Ready') return false;
+        const pot = String(t['task-potential-owner'] || t['task-potential-group'] || '')
+          .split(',').map((s: string) => s.trim()).filter(Boolean);
+        return pot.some((g: string) => groups.includes(g));
+      });
+      return groupEligible ? 'group' : 'none';
+    } catch {
+      return 'none';
+    }
   }
 
   applyFilters() {
@@ -528,9 +449,9 @@ export class ListeInstanceDemandeComponent implements OnInit {
         console.log('⚠️ Utilisation de l\'ID d\'instance comme fallback');
       }
       
-      // Créer un objet compatible avec DetailComponent
-      const taskDetail = {
-        'task-id': realTaskId, // Utiliser le vrai ID de tâche
+      // Récupérer métadonnées + variables depuis jBPM et fusionner pour le composant Detail
+      let taskDetail = {
+        'task-id': realTaskId,
         'task-name': realTaskName,
         'task-subject': `Instance ${row.id}`,
         'task-description': `Détails de l'instance ${row.id}`,
@@ -549,6 +470,38 @@ export class ListeInstanceDemandeComponent implements OnInit {
         'correlation-key': row.id.toString(),
         'process-type': 1
       };
+
+      try {
+        // Détails canoniques de la tâche (source of truth)
+        const canonicalDetails: any = await this.taskService.getTaskDetails(realTaskId, row.containerId);
+        const inputVars: any = await this.taskService.getTaskInputVariables(realTaskId, row.containerId);
+        if (canonicalDetails) {
+          taskDetail = {
+            ...taskDetail,
+            'task-status': canonicalDetails['task-status'] || taskDetail['task-status'],
+            'task-priority': canonicalDetails['task-priority'] ?? taskDetail['task-priority'],
+            'task-is-skipable': canonicalDetails['task-is-skipable'] ?? taskDetail['task-is-skipable'],
+            'task-actual-owner': canonicalDetails['task-actual-owner'] || taskDetail['task-actual-owner'],
+            'task-created-by': canonicalDetails['task-created-by'] || taskDetail['task-created-by'],
+            'task-created-on': canonicalDetails['task-created-on'] || taskDetail['task-created-on'],
+            'task-activation-time': canonicalDetails['task-activation-time'] || taskDetail['task-activation-time'],
+            'task-expiration-time': canonicalDetails['task-expiration-time'] || taskDetail['task-expiration-time'],
+            'task-proc-inst-id': canonicalDetails['task-proc-inst-id'] || taskDetail['task-proc-inst-id'],
+            'task-proc-def-id': canonicalDetails['task-proc-def-id'] || taskDetail['task-proc-def-id'],
+            'task-container-id': canonicalDetails['task-container-id'] || taskDetail['task-container-id']
+          } as any;
+        }
+        // Fusionner variables d'entrée dans userTaskInfos pour affichage/complétion
+        if (inputVars && typeof inputVars === 'object') {
+          const infoKey = taskDetail['task-id'];
+          this.selectedUserTaskInfos[infoKey] = {
+            ...(this.selectedUserTaskInfos[infoKey] || {}),
+            inputVariables: inputVars
+          };
+        }
+      } catch (e) {
+        console.warn('⚠️ Impossible de fusionner les détails/variables de la tâche:', e);
+      }
 
              // Récupérer les informations sur l'utilisateur actuel et son rôle
        const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -825,10 +778,10 @@ export class ListeInstanceDemandeComponent implements OnInit {
     const piid = Number(event?.processInstanceId);
     if (cid && !isNaN(piid)) {
       this.selectedContainerId = cid;
-      this.reload(cid);
+      this.reload();
     } else if (cid) {
       this.selectedContainerId = cid;
-      this.reload(cid);
+      this.reload();
     } else {
       this.reload();
     }

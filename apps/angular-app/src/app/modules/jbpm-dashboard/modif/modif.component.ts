@@ -33,7 +33,7 @@ export class ModifComponent implements OnInit, OnChanges, AfterViewInit {
       this.onclose();
     });
   }
-
+  
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['form'] && this.form) {
       console.log('🔍 ModifComponent: Formulaire reçu:', this.form.substring(0, 200) + '...');

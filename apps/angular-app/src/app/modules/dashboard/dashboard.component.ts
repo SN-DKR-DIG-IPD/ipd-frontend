@@ -392,7 +392,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 }
                 setTimeout(async () => {
                   await this.loadProcesses();
-                  this.listeInstanceDemande?.reload(this.selectedContainerId);
+                  this.listeInstanceDemande?.reload();
                 }, 1200);
               }
             });

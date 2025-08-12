@@ -36,7 +36,7 @@
     </div>
   </div>
 
-  <div *ngIf="!isLoading && filteredRows.length > 0" class="overflow-x-auto">
+  <div *ngIf="!isLoading && (filteredRows?.length ?? 0) > 0; else emptyTpl1" class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
@@ -45,41 +45,16 @@
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date début</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date fin</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tâche actuelle</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigné à</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taux de complétude</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>          
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
-        <tr *ngFor="let row of filteredRows" class="hover:bg-gray-50">
+        <tr *ngFor="let row of filteredRows; trackBy: trackById" class="hover:bg-gray-50">
           <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ row.id }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.type || 'Non renseigné' }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.dateDebut ? (row.dateDebut | date:'dd/MM/yyyy') : 'Non renseignée' }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.dateFin ? (row.dateFin | date:'dd/MM/yyyy') : 'Non renseignée' }}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span [class]="getStatusBadgeClass(row.statut)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-              {{ row.statut || 'Non renseigné' }}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span [class]="getCurrentTaskBadgeClass(row.currentTask)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-              {{ row.currentTask || 'En cours...' }}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span [class]="getAssignedToBadgeClass(row.assignedTo)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-              {{ row.assignedTo || 'Non assigné' }}
-            </span>
-          </td>
-                     <td class="px-6 py-4 whitespace-nowrap">
-             <div class="w-24 bg-gray-200 rounded h-4 relative">
-               <div class="h-4 rounded bg-green-500" [style.width]="(row.taux || 0) + '%'" role="progressbar"></div>
-               <span class="absolute inset-0 text-xs flex items-center justify-center font-bold text-green-900">
-                 {{ row.taux !== undefined ? (row.taux + '%') : '0%' }}
-               </span>
-             </div>
-           </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.type }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.dateDebut | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.dateFin | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ row.statut }}</td>
            <td class="px-6 py-4 whitespace-nowrap text-sm">
              <button 
                (click)="openDetailModal(row)"
@@ -92,6 +67,9 @@
       </tbody>
     </table>
   </div>
+  <ng-template #emptyTpl1>
+    <div class="text-center py-12 text-gray-500">Aucune instance</div>
+  </ng-template>
   
   <div *ngIf="!isLoading && filteredRows.length === 0" class="text-center py-12">
     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
